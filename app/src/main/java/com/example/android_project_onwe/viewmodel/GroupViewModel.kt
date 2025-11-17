@@ -18,14 +18,13 @@ class GroupViewModel : ViewModel() {
 
     fun loadGroupsForCurrentUser() {
         val currentUserId = auth.currentUser?.uid
-
         if (currentUserId == null) {
             _groups.value = emptyList()
             return
         }
 
         db.collection("group")
-            .whereArrayContains("members", db.collection("users").document(currentUserId))
+            .whereArrayContains("members", db.collection("user").document(currentUserId))
             .get()
             .addOnSuccessListener { snap ->
                 _groups.value = snap.documents.mapNotNull { it.toObject(Group::class.java) }
@@ -35,29 +34,72 @@ class GroupViewModel : ViewModel() {
             }
     }
 
-    fun createGroup(name: String, description: String, members: List<DocumentReference>) {
+
+    fun createGroup(name: String, description: String, memberEmails: List<String>) {
         val currentUserId = auth.currentUser?.uid ?: return
         val currentUserRef = db.collection("user").document(currentUserId)
 
-        val updatedMembers = members.toMutableList()
-        updatedMembers.add(currentUserRef)
+        if (memberEmails.isEmpty()) {
+
+            val groupData = Group(
+                name = name,
+                description = description,
+                createdBy = currentUserId,
+                createdAt = Timestamp.now(),
+                members = listOf(currentUserRef)
+            )
+            db.collection("group").document().set(groupData)
+            return
+        }
+
+        // Convert emails to DocumentReferences asynchronously
+        val memberRefs = mutableListOf<DocumentReference>()
+        var completed = 0
+
+        memberEmails.forEach { email ->
+            db.collection("user")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener { snap ->
+                    snap.documents.firstOrNull()?.let { memberRefs.add(it.reference) }
+                    completed++
+                    if (completed == memberEmails.size) {
+                        finishGroupCreation(name, description, currentUserRef, memberRefs)
+                    }
+                }
+                .addOnFailureListener {
+                    completed++
+                    if (completed == memberEmails.size) {
+                        finishGroupCreation(name, description, currentUserRef, memberRefs)
+                    }
+                }
+        }
+    }
+
+
+    private fun finishGroupCreation(
+        name: String,
+        description: String,
+        currentUserRef: DocumentReference,
+        memberRefs: List<DocumentReference>
+    ) {
+        val allMembers = memberRefs.toMutableList()
+        allMembers.add(currentUserRef)
 
         val groupData = Group(
             name = name,
             description = description,
-            createdBy = currentUserId,
+            createdBy = currentUserRef.id,
             createdAt = Timestamp.now(),
-            members = updatedMembers
+            members = allMembers
         )
 
-        db.collection("group")
-            .document()
+        db.collection("group").document()
             .set(groupData)
             .addOnSuccessListener {
                 // Group created successfully
             }
             .addOnFailureListener { e ->
-                // Handle error
                 e.printStackTrace()
             }
     }
