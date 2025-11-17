@@ -11,24 +11,35 @@ import kotlinx.coroutines.flow.StateFlow
 
 class GroupViewModel : ViewModel() {
 
+    // Dev mode
+    private val DEV_MODE = true
+    private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
+
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
 
-    fun loadGroupsForCurrentUser() {
-        val currentUserId = auth.currentUser?.uid
+    private fun getCurrentUserId(): String? {
+        return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
+    }
 
-        if (currentUserId == null) {
+    fun loadGroupsForCurrentUser() {
+        val currentUserId = getCurrentUserId() ?: run {
             _groups.value = emptyList()
             return
         }
 
+        val currentUserRef = db.collection("user").document(currentUserId)
+
         db.collection("group")
-            .whereArrayContains("members", db.collection("users").document(currentUserId))
+            .whereArrayContains("members", currentUserRef)
             .get()
             .addOnSuccessListener { snap ->
-                _groups.value = snap.documents.mapNotNull { it.toObject(Group::class.java) }
+                _groups.value = snap.documents.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(id = doc.id)
+                }
             }
             .addOnFailureListener {
                 _groups.value = emptyList()
@@ -36,16 +47,18 @@ class GroupViewModel : ViewModel() {
     }
 
     fun createGroup(name: String, description: String, members: List<DocumentReference>) {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = getCurrentUserId() ?: return
         val currentUserRef = db.collection("user").document(currentUserId)
 
         val updatedMembers = members.toMutableList()
-        updatedMembers.add(currentUserRef)
+        if (!updatedMembers.contains(currentUserRef)) {
+            updatedMembers.add(currentUserRef)
+        }
 
         val groupData = Group(
             name = name,
             description = description,
-            createdBy = currentUserId,
+            createdBy = currentUserRef,
             createdAt = Timestamp.now(),
             members = updatedMembers
         )
@@ -54,11 +67,7 @@ class GroupViewModel : ViewModel() {
             .document()
             .set(groupData)
             .addOnSuccessListener {
-                // Group created successfully
-            }
-            .addOnFailureListener { e ->
-                // Handle error
-                e.printStackTrace()
+                loadGroupsForCurrentUser()
             }
     }
 }

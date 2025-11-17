@@ -10,12 +10,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
+
+
+    //  DEV MODE, ALWAYS LOG IN AS TEST USER
+
+    private val DEV_MODE = true
+    private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
+
+    val currentUserId: String?
+        get() = if (DEV_MODE) DEV_USER_ID else FirebaseAuth.getInstance().currentUser?.uid
+
+
     private val _authEvent = MutableStateFlow("")
     val authEvent: StateFlow<String> = _authEvent
 
     private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
+
+    // SIGN UP (real, untouched)
     fun signUp(email: String, password: String, firstName: String, lastName: String) {
+        if (DEV_MODE) {
+            _authEvent.value = "Sign up disabled in DEV MODE"
+            return
+        }
+
         FirebaseAuth.getInstance()
             .createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
@@ -28,20 +47,12 @@ class AuthViewModel : ViewModel() {
                         db.collection("user").document(currentUser.uid)
                             .set(userData)
                             .addOnSuccessListener {
-                                // Both Auth & Firestore succeeded
                                 _isLoggedIn.value = true
                                 _authEvent.value = "Sign up successful!"
                             }
                             .addOnFailureListener { e ->
-                                // Firestore failed -> delete the Auth user
                                 currentUser.delete()
-                                    .addOnCompleteListener { deleteTask ->
-                                        if (deleteTask.isSuccessful) {
-                                            _authEvent.value = "Failed to save user data. Account rolled back."
-                                        } else {
-                                            _authEvent.value = "Failed to save user data. Could not rollback Auth account."
-                                        }
-                                    }
+                                _authEvent.value = "Failed to save user data. Rolled back."
                             }
                     } else {
                         _authEvent.value = "Failed to get current user"
@@ -54,9 +65,16 @@ class AuthViewModel : ViewModel() {
 
 
 
-
-
+    // LOGIN
     fun login(email: String, password: String) {
+
+        if (DEV_MODE) {
+            _isLoggedIn.value = true
+            _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
+            return
+        }
+
+        // LOGIN (if dev mode is off)
         viewModelScope.launch {
             try {
                 FirebaseAuth.getInstance()
