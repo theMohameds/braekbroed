@@ -13,7 +13,10 @@ import com.example.android_project_onwe.viewmodel.GroupViewModel
 
 @Composable
 fun AppNavigation() {
-    var currentScreenState by remember { mutableStateOf<Screen>(Screen.CreateGroup) }
+    // Current screen state
+    var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
+
+    // ViewModel for screens
     val viewModel: GroupViewModel = viewModel()
 
     // Determine which bottom nav item is selected
@@ -25,16 +28,18 @@ fun AppNavigation() {
 
     Scaffold(
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = selectedItem,
-                onItemSelected = { item ->
-                    currentScreenState = when (item) {
-                        "home" -> Screen.Home
-                        "add" -> Screen.CreateGroup
-                        else -> currentScreenState
+            if (currentScreenState.showBottomBar) {
+                BottomNavigationBar(
+                    selectedItem = selectedItem,
+                    onItemSelected = { item ->
+                        currentScreenState = when (item) {
+                            "home" -> Screen.Home
+                            "add" -> Screen.CreateGroup
+                            else -> currentScreenState
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         when (val screen = currentScreenState) {
@@ -43,6 +48,7 @@ fun AppNavigation() {
                     viewModel = viewModel,
                     modifier = Modifier.padding(paddingValues),
                     onGroupClick = { group ->
+                        // handle group click
                     }
                 )
             }
@@ -50,7 +56,6 @@ fun AppNavigation() {
                 CreateGroupScreen(
                     viewModel = viewModel,
                     onGroupCreated = { newGroup ->
-                        // After creation, navigate back to Home
                         currentScreenState = Screen.Home
                     }
                 )
@@ -59,8 +64,8 @@ fun AppNavigation() {
     }
 }
 
-// Screen sealed class
-sealed class Screen {
-    object Home : Screen()
-    object CreateGroup : Screen()
+// Sealed class for screens
+sealed class Screen(val showBottomBar: Boolean = true) {
+    object Home : Screen(showBottomBar = true)
+    object CreateGroup : Screen(showBottomBar = true)
 }

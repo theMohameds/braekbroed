@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 class AuthViewModel : ViewModel() {
     private val _authEvent = MutableStateFlow("")
     val authEvent: StateFlow<String> = _authEvent
-
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
@@ -89,14 +88,8 @@ class AuthViewModel : ViewModel() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     _isLoggedIn.value = true
-                    _authEvent.value = "Login successful!"
                 } else {
-                    val message = when (task.exception) {
-                        is com.google.firebase.auth.FirebaseAuthInvalidUserException -> "No account found with this email."
-                        is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Incorrect password."
-                        else -> "Login failed. Please try again."
-                    }
-                    _authEvent.value = message
+                    _authEvent.value = "Invalid email or password."
                 }
             }
     }
