@@ -1,10 +1,11 @@
-package com.example.android_project_onwe.view
+package com.example.android_project_onwe.view.startUpScreens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,11 +17,14 @@ import com.example.android_project_onwe.viewmodel.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
+fun LoginScreen(
+    authViewModel: AuthViewModel = viewModel(),
+    onSignUpClick: () -> Unit // <-- added parameter for switching
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
-    val buttonWidth = 100.dp
+    val buttonWidth = 120.dp
 
     // Collect events from the ViewModel
     LaunchedEffect(Unit) {
@@ -39,7 +43,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -64,18 +67,17 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
             )
 
             Button(
-                onClick = { authViewModel.signUp(email, password) },
-                modifier = Modifier.width(buttonWidth)
-            ) {
-                Text("Sign Up")
-            }
-
-            Button(
                 onClick = { authViewModel.login(email, password) },
                 modifier = Modifier.width(buttonWidth)
             ) {
                 Text("Login")
             }
+
+            // ----- SWITCH TO SIGNUP -----
+            TextButton(onClick = onSignUpClick) {
+                Text("Don't have an account? Sign Up")
+            }
+            // ----- END SWITCH TO SIGNUP -----
 
             if (message.isNotEmpty()) {
                 Text(text = message, modifier = Modifier.padding(top = 8.dp))

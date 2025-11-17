@@ -1,3 +1,4 @@
+// File: HomeScreen.kt
 package com.example.android_project_onwe.view.screens
 
 import androidx.compose.foundation.background
@@ -20,39 +21,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_project_onwe.model.Group
-import com.example.android_project_onwe.view.BottomNavigationBar
 import com.example.android_project_onwe.viewmodel.GroupViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: GroupViewModel = viewModel(),
     onGroupClick: (Group) -> Unit = {},
-    onCreateGroupClick: () -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val groups by viewModel.groups.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) { viewModel.loadGroupsForCurrentUser() }
+
+    val filteredGroups = groups.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Home/Group",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF5F5F5)
-                )
+                title = { Text("Groups", fontSize = 20.sp, fontWeight = FontWeight.SemiBold) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF5F5F5))
             )
         },
-        bottomBar = {
-            BottomNavigationBar(selectedItem = "home")
-        },
-        containerColor = Color(0xFFF5F5F5)
+        containerColor = Color(0xFFF5F5F5),
+        modifier = modifier
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -60,21 +53,14 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
-            // Search bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
-                placeholder = { Text("Search") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = Color.Gray
-                    )
-                },
+                placeholder = { Text("Search trips") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
@@ -82,19 +68,29 @@ fun HomeScreen(
                 )
             )
 
-            // Groups list
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(uiState.groups.filter {
-                    it.name.contains(searchQuery, ignoreCase = true)
-                }) { group ->
-                    GroupCard(
-                        group = group,
-                        viewModel = viewModel,
-                        onClick = { onGroupClick(group) }
+            if (filteredGroups.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 50.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Text(
+                        "This user is not part of any groups yet.",
+                        color = Color.Gray,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(filteredGroups) { group ->
+                        GroupCard(group = group, onClick = { onGroupClick(group) })
+                    }
                 }
             }
         }
@@ -102,144 +98,47 @@ fun HomeScreen(
 }
 
 @Composable
-fun GroupCard(
-    group: Group,
-    viewModel: GroupViewModel,
-    onClick: () -> Unit
-) {
+fun GroupCard(group: Group, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE0E0E0)),
+                contentAlignment = Alignment.Center
             ) {
-                // Group image placeholder
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE0E0E0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Home,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Group info
-                Column {
-                    Text(
-                        text = group.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Period",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = "Status",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = "Total price",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = "Amount members: ${group.members.size}",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
+                Icon(Icons.Default.Home, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
             }
 
-            // Details button
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(group.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Members: ${group.members.size}", fontSize = 12.sp, color = Color.Gray)
+            }
+
             Button(
                 onClick = onClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2196F3)
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text(
-                    "Details",
-                    fontSize = 14.sp,
-                    color = Color.White
-                )
+                Text("Details", fontSize = 14.sp, color = Color.White)
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(selectedItem: String) {
-    NavigationBar(
-        containerColor = Color.White,
-        modifier = Modifier.height(64.dp)
-    ) {
-        NavigationBarItem(
-            selected = selectedItem == "chat",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Face,
-                    contentDescription = "Chat"
-                )
-            }
-        )
-        NavigationBarItem(
-            selected = selectedItem == "add",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Add"
-                )
-            }
-        )
-        NavigationBarItem(
-            selected = selectedItem == "home",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Home"
-                )
-            }
-        )
-        NavigationBarItem(
-            selected = selectedItem == "profile",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Profile"
-                )
-            }
-        )
     }
 }

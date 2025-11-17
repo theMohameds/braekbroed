@@ -1,7 +1,17 @@
 package com.example.android_project_onwe.model
 
-/*data class User(
-    val uid: String = "",
+/**
+ * Represents a single user.
+ */
+data class User(
+    val firstName: String = "",
+    val lastName: String = "",
     val email: String = "",
-    val name: String = ""
-)*/
+)
+
+data class User2(
+    val uid: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
+    val email: String = ""
+)

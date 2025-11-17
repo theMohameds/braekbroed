@@ -9,49 +9,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun BottomNavigationBar(selectedItem: String) {
-    NavigationBar(
-        containerColor = Color.White,
-    ) {
+fun BottomNavigationBar(
+    selectedItem: String,
+    onItemSelected: (String) -> Unit  // callback when an item is tapped
+) {
+    NavigationBar(containerColor = Color.White) {
         NavigationBarItem(
             selected = selectedItem == "chat",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.MailOutline,  // Fixed icon
-                    contentDescription = "Chat"
-                )
-            }
+            onClick = { onItemSelected("chat") },
+            icon = { Icon(Icons.Default.MailOutline, contentDescription = "Chat") }
         )
         NavigationBarItem(
             selected = selectedItem == "add",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Add"
-                )
-            }
+            onClick = { onItemSelected("add") },
+            icon = { Icon(Icons.Default.Add, contentDescription = "Add") }
         )
         NavigationBarItem(
             selected = selectedItem == "home",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Home"
-                )
-            }
+            onClick = { onItemSelected("home") },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home") }
         )
         NavigationBarItem(
             selected = selectedItem == "profile",
-            onClick = { },
-            icon = {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Profile"
-                )
-            }
+            onClick = { onItemSelected("profile") },
+            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") }
         )
     }
 }

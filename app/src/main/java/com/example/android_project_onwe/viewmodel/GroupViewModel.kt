@@ -1,72 +1,64 @@
 package com.example.android_project_onwe.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
-import com.example.android_project_onwe.model.Receipt
 import com.example.android_project_onwe.model.User
-import com.example.android_project_onwe.model.DummyData
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
-data class GroupUiState(
-    val groups: List<Group> = emptyList(),
-    val selectedGroup: Group? = null,
-    val receipts: List<Receipt> = emptyList(),
-    val users: Map<String, User> = emptyMap(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 class GroupViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(GroupUiState())
-    val uiState: StateFlow<GroupUiState> = _uiState.asStateFlow()
 
-    init {
-        loadInitialData()
-    }
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    private fun loadInitialData() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                groups = listOf(DummyData.expenseGroup),
-                users = DummyData.usersMap,
-                receipts = listOf(DummyData.sampleReceipt)
-            )
+    private val _groups = MutableStateFlow<List<Group>>(emptyList())
+    val groups: StateFlow<List<Group>> = _groups
+    
+
+    fun loadGroupsForCurrentUser() {
+        val currentUserId = auth.currentUser?.uid
+
+        if (currentUserId == null) {
+            _groups.value = emptyList()
+            return
         }
+
+        db.collection("group")
+            .whereArrayContains("members", currentUserId)
+            .get()
+            .addOnSuccessListener { snap ->
+                _groups.value = snap.documents.mapNotNull { it.toObject(Group::class.java) }
+            }
+            .addOnFailureListener {
+                _groups.value = emptyList()
+            }
     }
 
-    fun selectGroup(group: Group) {
-        _uiState.value = _uiState.value.copy(selectedGroup = group)
+    fun createGroup(name: String, description: String, members: List<String>,
+                    paidBy: String, totalExpense: Double, currentBalances: Map<String, Double>) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val db = FirebaseFirestore.getInstance()
+
+        val updatedMembers = members.toMutableList()
+        updatedMembers.add(currentUser.toString())
+
+        val groupData = Group(name, description, currentUser.toString(), Timestamp.now(), members,
+            paidBy, totalExpense, currentBalances, currentBalances)
+
+        db.collection("group")
+            .document()
+            .set(groupData)
+            .addOnSuccessListener {
+
+            }
+            .addOnFailureListener { e ->
+
+            }
     }
 
-    fun createGroup(name: String, memberIds: List<String>) {
-        viewModelScope.launch {
-            val newGroup = Group(
-                name = name,
-                members = memberIds,
-                totalBalance = 0.0,
-                userOwes = 0.0,
-                userIsOwed = 0.0
-            )
-            val updatedGroups = _uiState.value.groups + newGroup
-            _uiState.value = _uiState.value.copy(groups = updatedGroups)
-        }
-    }
 
-    fun getGroupMembers(group: Group): List<User> {
-        return group.members.mapNotNull { memberId ->
-            _uiState.value.users[memberId]
-        }
-    }
 
-    fun getReceiptsForGroup(groupId: String): List<Receipt> {
-        return _uiState.value.receipts
-    }
-
-    fun getUserById(userId: String): User? {
-        return _uiState.value.users[userId]
-    }
 }
