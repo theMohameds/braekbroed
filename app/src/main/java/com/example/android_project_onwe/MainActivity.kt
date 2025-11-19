@@ -34,6 +34,10 @@ import com.example.android_project_onwe.utils.NotificationUtils
 import com.example.android_project_onwe.viewmodel.NotificationViewModel
 // ----- END NOTIFICATION IMPORTS -----
 
+// Profile Management Screen import
+import com.example.android_project_onwe.view.ProfileScreen
+
+
 class MainActivity : ComponentActivity() {
 
     // ----- NOTIFICATION RELATED -----
@@ -139,12 +143,15 @@ fun LoggedInApp() {
                 when (currentDestination.value) {
                     AppDestinations.HOME -> Greeting("Home")
                     AppDestinations.FAVORITES -> Greeting("Favorites")
-                    AppDestinations.PROFILE -> Greeting("Profile")
+                    AppDestinations.PROFILE ->{ Greeting("profil")
+                    ProfileScreen() // viser profilskærm
+                    }
                 }
             }
         }
     }
 }
+
 
 enum class AppDestinations(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
