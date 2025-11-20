@@ -1,6 +1,7 @@
 package com.example.android_project_onwe.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -8,6 +9,8 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class GroupViewModel : ViewModel() {
 
@@ -20,6 +23,13 @@ class GroupViewModel : ViewModel() {
 
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
+    private val _groupEvent = MutableStateFlow("")
+    // Lets the UI listen for messages from the ViewModel, like “Group created!” or errors
+    val groupEvent: StateFlow<String> = _groupEvent
+
+    init {
+        loadGroupsForCurrentUser()
+    }
 
     private fun getCurrentUserId(): String? {
         return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
@@ -44,30 +54,80 @@ class GroupViewModel : ViewModel() {
             .addOnFailureListener {
                 _groups.value = emptyList()
             }
+        }
     }
 
-    fun createGroup(name: String, description: String, members: List<DocumentReference>) {
-        val currentUserId = getCurrentUserId() ?: return
-        val currentUserRef = db.collection("user").document(currentUserId)
+fun createGroup(
+    name: String,
+    description: String,
+    memberEmailsOrRefs: List<Any>
+) {
+    val currentUserId = getCurrentUserId() ?: return
+    val currentUserRef = db.collection("user").document(currentUserId)
 
-        val updatedMembers = members.toMutableList()
-        if (!updatedMembers.contains(currentUserRef)) {
-            updatedMembers.add(currentUserRef)
+    // DEV MODE
+    if (DEV_MODE) {
+        val refs = memberEmailsOrRefs.filterIsInstance<DocumentReference>().toMutableList()
+
+        if (!refs.contains(currentUserRef)) {
+            refs.add(currentUserRef)
         }
 
-        val groupData = Group(
-            name = name,
-            description = description,
-            createdBy = currentUserRef,
-            createdAt = Timestamp.now(),
-            members = updatedMembers
-        )
+        finishGroupCreation(name, description, currentUserRef, refs)
+        return
+    }
 
-        db.collection("group")
-            .document()
-            .set(groupData)
-            .addOnSuccessListener {
-                loadGroupsForCurrentUser()
-            }
+    // NORMAL MODE
+    val memberEmails = memberEmailsOrRefs.filterIsInstance<String>()
+
+    viewModelScope.launch {
+        try {
+            val memberRefs = memberEmails.mapNotNull { email ->
+                val snap = db.collection("user")
+                    .whereEqualTo("email", email)
+                    .get()
+                    .await()
+
+                snap.documents.firstOrNull()?.reference
+            }.toMutableList()
+
+            finishGroupCreation(name, description, currentUserRef, memberRefs)
+            _groupEvent.value = "Group created successfully!"
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _groupEvent.value = "Failed to create group: ${e.message}"
+        }
     }
 }
+
+private suspend fun finishGroupCreation(
+    name: String,
+    description: String,
+    currentUserRef: DocumentReference,
+    memberRefs: List<DocumentReference>
+) {
+    val allMembers = (memberRefs + currentUserRef).distinct()
+
+    if (allMembers.size <= 1) {
+        _groupEvent.value = "A group must have at least 2 members."
+        return
+    }
+
+    val groupData = Group(
+        name = name,
+        description = description,
+        createdBy = currentUserRef,
+        createdAt = Timestamp.now(),
+        members = allMembers
+    )
+
+    db.collection("group")
+        .document()
+        .set(groupData)
+        .addOnSuccessListener { loadGroupsForCurrentUser() }
+        .addOnFailureListener { e ->
+            _groupEvent.value = "Failed to save group: ${e.message}"
+        }
+}
+

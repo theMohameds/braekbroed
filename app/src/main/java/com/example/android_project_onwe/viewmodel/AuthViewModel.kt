@@ -1,13 +1,11 @@
 package com.example.android_project_onwe.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
 
@@ -23,7 +21,6 @@ class AuthViewModel : ViewModel() {
 
     private val _authEvent = MutableStateFlow("")
     val authEvent: StateFlow<String> = _authEvent
-
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
@@ -32,6 +29,18 @@ class AuthViewModel : ViewModel() {
     fun signUp(email: String, password: String, firstName: String, lastName: String) {
         if (DEV_MODE) {
             _authEvent.value = "Sign up disabled in DEV MODE"
+            return
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _authEvent.value = "Invalid email format"
+            return
+        }
+        if (password.length < 8) {
+            _authEvent.value = "Password must be at least 8 characters"
+            return
+        }
+        if (firstName.isBlank() || lastName.isBlank()) {
+            _authEvent.value = "Please enter your first and last name"
             return
         }
 
@@ -58,38 +67,55 @@ class AuthViewModel : ViewModel() {
                         _authEvent.value = "Failed to get current user"
                     }
                 } else {
-                    _authEvent.value = task.exception?.message ?: "Sign up failed"
+                    // --- Safe Error Messages (C) ---
+                    val message = when (task.exception) {
+                        is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Email already in use."
+                        is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Password is too weak."
+                        else -> "Sign up failed. Please try again."
+                    }
+                    _authEvent.value = message
                 }
             }
     }
 
-
-
-    // LOGIN
     fun login(email: String, password: String) {
-
-        if (DEV_MODE) {
-            _isLoggedIn.value = true
-            _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
+        if (email.isBlank() && password.isBlank()) {
+            _authEvent.value = "Please enter your email & password"
+            return
+        }
+        if (email.isBlank()) {
+            _authEvent.value = "Please enter your email"
+            return
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _authEvent.value = "Invalid email format"
+            return
+        }
+        if (password.isBlank()) {
+            _authEvent.value = "Please enter your password"
             return
         }
 
-        // LOGIN (if dev mode is off)
-        viewModelScope.launch {
-            try {
-                FirebaseAuth.getInstance()
-                    .signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            _isLoggedIn.value = true
-                            _authEvent.value = "Login successful!"
-                        } else {
-                            _authEvent.value = task.exception?.message ?: "Login failed"
-                        }
-                    }
-            } catch (e: Exception) {
-                _authEvent.value = e.message ?: "Unexpected error"
+
+fun login(email: String, password: String) {
+
+    // DEV MODE LOGIN (bypass Firebase)
+    if (DEV_MODE) {
+        _isLoggedIn.value = true
+        _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
+        return
+    }
+
+    // NORMAL FIREBASE LOGIN
+    FirebaseAuth.getInstance()
+        .signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                _isLoggedIn.value = true
+                _authEvent.value = "Login successful!"
+            } else {
+                _authEvent.value = task.exception?.message ?: "Invalid email or password."
             }
         }
-    }
 }
+

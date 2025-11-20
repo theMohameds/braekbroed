@@ -10,12 +10,10 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
     // Temporary: Always show main app for testing
     AppNavigation()
 
-    // Original code (commented out for now):
-    /*val isUserLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    /*
+    val isUserLoggedIn by authViewModel.isLoggedIn.collectAsState(initial = false)
 
-    // ----- SWITCH LOGIN/SIGNUP SCREEN -----
     var currentScreen by remember { mutableStateOf("login") }
-    // ----- END SWITCH LOGIN/SIGNUP SCREEN -----
 
     if (!isUserLoggedIn) {
         when (currentScreen) {
@@ -31,6 +29,7 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
     } else {
         AppNavigation()
     }
-
      */
+
+
 }

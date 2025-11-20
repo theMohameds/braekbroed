@@ -121,7 +121,7 @@ fun CreateGroupScreen(
                         viewModel.createGroup(
                             name = groupName,
                             description = groupDescription,
-                            members = emptyList() // replace with conversion in ViewModel
+                            memberEmails = members
                         )
 
                         // Invoke callback (could be after actual success in VM)
