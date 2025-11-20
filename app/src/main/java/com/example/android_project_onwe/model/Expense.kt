@@ -7,9 +7,3 @@ data class Expense(
     val payerId: String = "",
     val timestamp: Long = 0L
 )
-
-data class Debt(
-    val fromUserId: String,
-    val toUserId: String,
-    val amount: Double
-)

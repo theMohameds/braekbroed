@@ -3,6 +3,7 @@ package com.example.android_project_onwe.repository
 import com.example.android_project_onwe.model.Message
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class GroupChatRepository {
 
@@ -11,6 +12,7 @@ class GroupChatRepository {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var listenerRegistration: ListenerRegistration? = null
 
     private fun getCurrentUserId(): String? {
         return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
@@ -50,5 +52,10 @@ class GroupChatRepository {
         )
 
         doc.set(message)
+    }
+
+    fun stopListening() {
+        listenerRegistration?.remove()
+        listenerRegistration = null
     }
 }

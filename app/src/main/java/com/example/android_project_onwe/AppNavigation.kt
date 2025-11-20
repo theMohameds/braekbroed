@@ -11,6 +11,7 @@ import com.example.android_project_onwe.view.screens.CreateGroupScreen
 import com.example.android_project_onwe.view.screens.HomeScreen
 import com.example.android_project_onwe.viewmodel.GroupViewModel
 import com.example.android_project_onwe.view.ProfileScreen
+import com.example.android_project_onwe.view.group.FinalizedBillScreen
 
 @Composable
 fun AppNavigation() {
@@ -22,6 +23,7 @@ fun AppNavigation() {
         is Screen.CreateGroup -> "add"
         is Screen.GroupChat -> ""
         is Screen.Profile -> "profile"
+        is Screen.FinalizedBill -> ""
     }
 
     Scaffold(
@@ -66,9 +68,17 @@ fun AppNavigation() {
             is Screen.GroupChat -> {
                 GroupChatView(
                     groupId = screen.groupId,
-                    onBack = {
-                        currentScreenState = Screen.Home
+                    onBack = { currentScreenState = Screen.Home },
+                    onFinalizeBill = { groupId ->
+                        currentScreenState = Screen.FinalizedBill(groupId)
                     }
+                )
+            }
+
+            is Screen.FinalizedBill -> {
+                FinalizedBillScreen(
+                    groupId = screen.groupId,
+                    onBack = { currentScreenState = Screen.Home }
                 )
             }
 
@@ -86,6 +96,7 @@ sealed class Screen {
     object Home : Screen()
     object CreateGroup : Screen()
     data class GroupChat(val groupId: String) : Screen()
+    data class FinalizedBill(val groupId: String) : Screen()
     object Profile : Screen()
 }
 

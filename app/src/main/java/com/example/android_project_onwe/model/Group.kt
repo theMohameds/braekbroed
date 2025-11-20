@@ -23,5 +23,6 @@ data class Group(
     val description: String = "",
     val createdBy: DocumentReference? = null,
     val createdAt: Timestamp? = null,
-    val members: List<DocumentReference> = emptyList()
+    val members: List<DocumentReference> = emptyList(),
+    val billFinalized: Boolean = false
 )

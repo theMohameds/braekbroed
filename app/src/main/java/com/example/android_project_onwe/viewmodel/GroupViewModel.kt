@@ -116,7 +116,8 @@ class GroupViewModel : ViewModel() {
             description = description,
             createdBy = currentUserRef,
             createdAt = Timestamp.now(),
-            members = allMembers
+            members = allMembers,
+            billFinalized = false
         )
 
         db.collection("group")

@@ -3,6 +3,7 @@ package com.example.android_project_onwe.repository
 import com.example.android_project_onwe.model.Expense
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class ExpenseRepository {
 
@@ -11,6 +12,8 @@ class ExpenseRepository {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    private var listenerRegistration: ListenerRegistration? = null
 
     private fun getCurrentUserId(): String? {
         return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
@@ -44,5 +47,32 @@ class ExpenseRepository {
         )
 
         expenseDoc.set(expenseData)
+    }
+
+    fun updateExpense(groupId: String, expenseId: String, amount: Double, description: String) {
+        val expenseRef = db.collection("group")
+            .document(groupId)
+            .collection("expenses")
+            .document(expenseId)
+
+        expenseRef.update(
+            mapOf(
+                "amount" to amount,
+                "description" to description
+            )
+        )
+    }
+
+    fun deleteExpense(groupId: String, expenseId: String) {
+        db.collection("group")
+            .document(groupId)
+            .collection("expenses")
+            .document(expenseId)
+            .delete()
+    }
+
+    fun stopListening() {
+        listenerRegistration?.remove()
+        listenerRegistration = null
     }
 }
