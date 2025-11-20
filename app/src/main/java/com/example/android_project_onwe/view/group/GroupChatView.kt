@@ -31,7 +31,7 @@ fun GroupChatView(
     viewModel: GroupChatViewModel = viewModel()
 ) {
     // DEV MODE
-    val DEV_MODE = true
+    val DEV_MODE = false
     val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
     val currentUserId = if (DEV_MODE) DEV_USER_ID else FirebaseAuth.getInstance().currentUser?.uid
 

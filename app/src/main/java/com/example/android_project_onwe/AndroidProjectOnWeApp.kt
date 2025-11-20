@@ -8,9 +8,9 @@ import com.example.android_project_onwe.viewmodel.AuthViewModel
 @Composable
 fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
     // Temporary: Always show main app for testing
-    AppNavigation()
+    //AppNavigation()
 
-    /*
+
     val isUserLoggedIn by authViewModel.isLoggedIn.collectAsState(initial = false)
 
     var currentScreen by remember { mutableStateOf("login") }
@@ -29,7 +29,7 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
     } else {
         AppNavigation()
     }
-     */
+
 
 
 }

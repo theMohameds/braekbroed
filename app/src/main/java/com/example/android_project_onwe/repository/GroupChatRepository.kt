@@ -6,7 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 class GroupChatRepository {
 
-    private val DEV_MODE = true
+    private val DEV_MODE = false
     private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
 
     private val db = FirebaseFirestore.getInstance()

@@ -11,7 +11,7 @@ class AuthViewModel : ViewModel() {
 
 
     //  DEV MODE, ALWAYS LOG IN AS TEST USER
-    private val DEV_MODE = true
+    private val DEV_MODE = false
     private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
 
     val currentUserId: String?
@@ -78,6 +78,11 @@ class AuthViewModel : ViewModel() {
     }
 
     fun login(email: String, password: String) {
+        if (DEV_MODE) {
+            _isLoggedIn.value = true
+            _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
+            return
+        }
         if (email.isBlank() && password.isBlank()) {
             _authEvent.value = "Please enter your email & password"
             return
@@ -96,15 +101,6 @@ class AuthViewModel : ViewModel() {
         }
 
 
-        fun login(email: String, password: String) {
-
-            // DEV MODE LOGIN (bypass Firebase)
-            if (DEV_MODE) {
-                _isLoggedIn.value = true
-                _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
-                return
-            }
-
             // NORMAL FIREBASE LOGIN
             FirebaseAuth.getInstance()
                 .signInWithEmailAndPassword(email, password)
@@ -118,5 +114,5 @@ class AuthViewModel : ViewModel() {
                 }
         }
     }
-}
+
 
