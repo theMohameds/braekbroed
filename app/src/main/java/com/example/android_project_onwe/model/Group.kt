@@ -18,9 +18,10 @@ data class Group(
  */
 
 data class Group(
+    val id: String = "",
     val name: String = "",
     val description: String = "",
-    val createdBy: String = "",
+    val createdBy: DocumentReference? = null,
     val createdAt: Timestamp? = null,
-    val members: List<DocumentReference> = listOf()
+    val members: List<DocumentReference> = emptyList()
 )

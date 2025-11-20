@@ -14,8 +14,13 @@ import kotlinx.coroutines.tasks.await
 
 class GroupViewModel : ViewModel() {
 
+    // Dev mode
+    private val DEV_MODE = true
+    private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
+
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
     private val _groupEvent = MutableStateFlow("")
@@ -26,93 +31,103 @@ class GroupViewModel : ViewModel() {
         loadGroupsForCurrentUser()
     }
 
-    fun loadGroupsForCurrentUser() {
-        val currentUserId = auth.currentUser?.uid ?: return
-
-        viewModelScope.launch {
-            try {
-                val snap = db.collection("group")
-                    .whereArrayContains("members", db.collection("user").document(currentUserId))
-                    .get()
-                    .await()
-
-                val loadedGroups = snap.documents.mapNotNull { doc ->
-                    try {
-                        doc.toObject(Group::class.java)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
-                }
-
-                _groups.value = loadedGroups
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _groups.value = emptyList()
-            }
-        }
+    private fun getCurrentUserId(): String? {
+        return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
     }
 
-
-    fun createGroup(name: String, description: String, memberEmails: List<String>) {
-        val currentUserId = auth.currentUser?.uid ?: run {
-            _groupEvent.value = "User not logged in."
+    fun loadGroupsForCurrentUser() {
+        val currentUserId = getCurrentUserId() ?: run {
+            _groups.value = emptyList()
             return
         }
 
         val currentUserRef = db.collection("user").document(currentUserId)
 
-        viewModelScope.launch {
-            try {
-                // Convert emails to DocumentReferences
-                val memberRefs = memberEmails.mapNotNull { email ->
-                    val snap = db.collection("user")
-                        .whereEqualTo("email", email)
-                        .get()
-                        .await()
-
-                    snap.documents.firstOrNull()?.reference
-                }.toMutableList()
-
-                finishGroupCreation(name, description, currentUserRef, memberRefs)
-                _groupEvent.value = "Group created successfully!"
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _groupEvent.value = "Failed to create group: ${e.message}"
+        db.collection("group")
+            .whereArrayContains("members", currentUserRef)
+            .get()
+            .addOnSuccessListener { snap ->
+                _groups.value = snap.documents.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(id = doc.id)
+                }
+            }
+            .addOnFailureListener {
+                _groups.value = emptyList()
             }
         }
     }
 
-    private suspend fun finishGroupCreation(
-        name: String,
-        description: String,
-        currentUserRef: DocumentReference,
-        memberRefs: List<DocumentReference>
-    ) {
-        val allMembers = (memberRefs + currentUserRef).distinct()
+fun createGroup(
+    name: String,
+    description: String,
+    memberEmailsOrRefs: List<Any>
+) {
+    val currentUserId = getCurrentUserId() ?: return
+    val currentUserRef = db.collection("user").document(currentUserId)
 
-        if (allMembers.size <= 1) {
-            _groupEvent.value = "A group must have at least 2 members."
-            return
+    // DEV MODE
+    if (DEV_MODE) {
+        val refs = memberEmailsOrRefs.filterIsInstance<DocumentReference>().toMutableList()
+
+        if (!refs.contains(currentUserRef)) {
+            refs.add(currentUserRef)
         }
 
-        val groupData = Group(
-            name = name,
-            description = description,
-            createdBy = currentUserRef.id,
-            createdAt = Timestamp.now(),
-            members = allMembers
-        )
+        finishGroupCreation(name, description, currentUserRef, refs)
+        return
+    }
 
+    // NORMAL MODE
+    val memberEmails = memberEmailsOrRefs.filterIsInstance<String>()
+
+    viewModelScope.launch {
         try {
-            db.collection("group").document()
-                .set(groupData)
-                .await()
+            val memberRefs = memberEmails.mapNotNull { email ->
+                val snap = db.collection("user")
+                    .whereEqualTo("email", email)
+                    .get()
+                    .await()
+
+                snap.documents.firstOrNull()?.reference
+            }.toMutableList()
+
+            finishGroupCreation(name, description, currentUserRef, memberRefs)
             _groupEvent.value = "Group created successfully!"
+
         } catch (e: Exception) {
             e.printStackTrace()
             _groupEvent.value = "Failed to create group: ${e.message}"
         }
     }
-
 }
+
+private suspend fun finishGroupCreation(
+    name: String,
+    description: String,
+    currentUserRef: DocumentReference,
+    memberRefs: List<DocumentReference>
+) {
+    val allMembers = (memberRefs + currentUserRef).distinct()
+
+    if (allMembers.size <= 1) {
+        _groupEvent.value = "A group must have at least 2 members."
+        return
+    }
+
+    val groupData = Group(
+        name = name,
+        description = description,
+        createdBy = currentUserRef,
+        createdAt = Timestamp.now(),
+        members = allMembers
+    )
+
+    db.collection("group")
+        .document()
+        .set(groupData)
+        .addOnSuccessListener { loadGroupsForCurrentUser() }
+        .addOnFailureListener { e ->
+            _groupEvent.value = "Failed to save group: ${e.message}"
+        }
+}
+
