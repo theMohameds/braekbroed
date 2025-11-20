@@ -117,20 +117,17 @@ fun CreateGroupScreen(
                     if (groupName.isNotBlank() && members.isNotEmpty()) {
                         isSubmitting = true
 
-                        // Call ViewModel, converting member Strings to DocumentReferences in VM
                         viewModel.createGroup(
                             name = groupName,
                             description = groupDescription,
-                            memberEmails = members
+                            memberEmailsOrRefs = members
                         )
 
-                        // Invoke callback (could be after actual success in VM)
-                        // onGroupCreated(group)  // you need the created group object
-
-                        // Reset UI
+                        // reset fields
                         groupName = ""
                         groupDescription = ""
                         members = emptyList()
+                        newMember = ""
                         duplicateMemberError = false
                         isSubmitting = false
                     }

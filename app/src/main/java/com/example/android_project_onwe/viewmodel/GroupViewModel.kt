@@ -23,8 +23,8 @@ class GroupViewModel : ViewModel() {
 
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
+
     private val _groupEvent = MutableStateFlow("")
-    // Lets the UI listen for messages from the ViewModel, like “Group created!” or errors
     val groupEvent: StateFlow<String> = _groupEvent
 
     init {
@@ -54,80 +54,79 @@ class GroupViewModel : ViewModel() {
             .addOnFailureListener {
                 _groups.value = emptyList()
             }
+    }
+
+    fun createGroup(
+        name: String,
+        description: String,
+        memberEmailsOrRefs: List<Any>
+    ) {
+        val currentUserId = getCurrentUserId() ?: return
+        val currentUserRef = db.collection("user").document(currentUserId)
+
+        if (DEV_MODE) {
+            val refs = memberEmailsOrRefs.filterIsInstance<DocumentReference>().toMutableList()
+
+            if (!refs.contains(currentUserRef)) {
+                refs.add(currentUserRef)
+            }
+
+            finishGroupCreation(name, description, currentUserRef, refs)
+            return
+        }
+
+        val memberEmails = memberEmailsOrRefs.filterIsInstance<String>()
+
+        viewModelScope.launch {
+            try {
+                val memberRefs = memberEmails.mapNotNull { email ->
+                    val snap = db.collection("user")
+                        .whereEqualTo("email", email)
+                        .get()
+                        .await()
+
+                    snap.documents.firstOrNull()?.reference
+                }.toMutableList()
+
+                finishGroupCreation(name, description, currentUserRef, memberRefs)
+                _groupEvent.value = "Group created successfully!"
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _groupEvent.value = "Failed to create group: ${e.message}"
+            }
         }
     }
 
-fun createGroup(
-    name: String,
-    description: String,
-    memberEmailsOrRefs: List<Any>
-) {
-    val currentUserId = getCurrentUserId() ?: return
-    val currentUserRef = db.collection("user").document(currentUserId)
+    private fun finishGroupCreation(
+        name: String,
+        description: String,
+        currentUserRef: DocumentReference,
+        memberRefs: List<DocumentReference>
+    ) {
+        val allMembers = (memberRefs + currentUserRef).distinct()
 
-    // DEV MODE
-    if (DEV_MODE) {
-        val refs = memberEmailsOrRefs.filterIsInstance<DocumentReference>().toMutableList()
-
-        if (!refs.contains(currentUserRef)) {
-            refs.add(currentUserRef)
+        if (allMembers.size <= 1) {
+            _groupEvent.value = "A group must have at least 2 members."
+            return
         }
 
-        finishGroupCreation(name, description, currentUserRef, refs)
-        return
-    }
+        val groupData = Group(
+            name = name,
+            description = description,
+            createdBy = currentUserRef,
+            createdAt = Timestamp.now(),
+            members = allMembers
+        )
 
-    // NORMAL MODE
-    val memberEmails = memberEmailsOrRefs.filterIsInstance<String>()
-
-    viewModelScope.launch {
-        try {
-            val memberRefs = memberEmails.mapNotNull { email ->
-                val snap = db.collection("user")
-                    .whereEqualTo("email", email)
-                    .get()
-                    .await()
-
-                snap.documents.firstOrNull()?.reference
-            }.toMutableList()
-
-            finishGroupCreation(name, description, currentUserRef, memberRefs)
-            _groupEvent.value = "Group created successfully!"
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _groupEvent.value = "Failed to create group: ${e.message}"
-        }
+        db.collection("group")
+            .document()
+            .set(groupData)
+            .addOnSuccessListener {
+                loadGroupsForCurrentUser()
+            }
+            .addOnFailureListener { e ->
+                _groupEvent.value = "Failed to save group: ${e.message}"
+            }
     }
 }
-
-private suspend fun finishGroupCreation(
-    name: String,
-    description: String,
-    currentUserRef: DocumentReference,
-    memberRefs: List<DocumentReference>
-) {
-    val allMembers = (memberRefs + currentUserRef).distinct()
-
-    if (allMembers.size <= 1) {
-        _groupEvent.value = "A group must have at least 2 members."
-        return
-    }
-
-    val groupData = Group(
-        name = name,
-        description = description,
-        createdBy = currentUserRef,
-        createdAt = Timestamp.now(),
-        members = allMembers
-    )
-
-    db.collection("group")
-        .document()
-        .set(groupData)
-        .addOnSuccessListener { loadGroupsForCurrentUser() }
-        .addOnFailureListener { e ->
-            _groupEvent.value = "Failed to save group: ${e.message}"
-        }
-}
-

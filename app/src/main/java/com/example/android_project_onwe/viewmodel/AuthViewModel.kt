@@ -11,7 +11,6 @@ class AuthViewModel : ViewModel() {
 
 
     //  DEV MODE, ALWAYS LOG IN AS TEST USER
-
     private val DEV_MODE = true
     private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
 
@@ -97,25 +96,27 @@ class AuthViewModel : ViewModel() {
         }
 
 
-fun login(email: String, password: String) {
+        fun login(email: String, password: String) {
 
-    // DEV MODE LOGIN (bypass Firebase)
-    if (DEV_MODE) {
-        _isLoggedIn.value = true
-        _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
-        return
-    }
-
-    // NORMAL FIREBASE LOGIN
-    FirebaseAuth.getInstance()
-        .signInWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
+            // DEV MODE LOGIN (bypass Firebase)
+            if (DEV_MODE) {
                 _isLoggedIn.value = true
-                _authEvent.value = "Login successful!"
-            } else {
-                _authEvent.value = task.exception?.message ?: "Invalid email or password."
+                _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
+                return
             }
+
+            // NORMAL FIREBASE LOGIN
+            FirebaseAuth.getInstance()
+                .signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        _isLoggedIn.value = true
+                        _authEvent.value = "Login successful!"
+                    } else {
+                        _authEvent.value = task.exception?.message ?: "Invalid email or password."
+                    }
+                }
         }
+    }
 }
 
