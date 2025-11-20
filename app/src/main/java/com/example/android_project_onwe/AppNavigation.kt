@@ -10,17 +10,18 @@ import com.example.android_project_onwe.view.group.GroupChatView
 import com.example.android_project_onwe.view.screens.CreateGroupScreen
 import com.example.android_project_onwe.view.screens.HomeScreen
 import com.example.android_project_onwe.viewmodel.GroupViewModel
+import com.example.android_project_onwe.view.ProfileScreen
 
 @Composable
 fun AppNavigation() {
     var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
-    val viewModel: GroupViewModel = viewModel()
+    val groupViewModel: GroupViewModel = viewModel()
 
-    // Determine which bottom nav item is selected
     val selectedItem = when (currentScreenState) {
         is Screen.Home -> "home"
         is Screen.CreateGroup -> "add"
         is Screen.GroupChat -> ""
+        is Screen.Profile -> "profile"
     }
 
     Scaffold(
@@ -32,6 +33,7 @@ fun AppNavigation() {
                         currentScreenState = when (item) {
                             "home" -> Screen.Home
                             "add" -> Screen.CreateGroup
+                            "profile" -> Screen.Profile
                             else -> currentScreenState
                         }
                     }
@@ -39,11 +41,12 @@ fun AppNavigation() {
             }
         }
     ) { paddingValues ->
+
         when (val screen = currentScreenState) {
 
             is Screen.Home -> {
                 HomeScreen(
-                    viewModel = viewModel,
+                    viewModel = groupViewModel,
                     modifier = Modifier.padding(paddingValues),
                     onGroupClick = { group ->
                         currentScreenState = Screen.GroupChat(group.id)
@@ -53,7 +56,7 @@ fun AppNavigation() {
 
             is Screen.CreateGroup -> {
                 CreateGroupScreen(
-                    viewModel = viewModel,
+                    viewModel = groupViewModel,
                     onGroupCreated = {
                         currentScreenState = Screen.Home
                     }
@@ -69,6 +72,11 @@ fun AppNavigation() {
                 )
             }
 
+            is Screen.Profile -> {
+                ProfileScreen(
+                    modifier = Modifier.padding(paddingValues)
+                )
+            }
         }
     }
 }
@@ -78,4 +86,6 @@ sealed class Screen {
     object Home : Screen()
     object CreateGroup : Screen()
     data class GroupChat(val groupId: String) : Screen()
+    object Profile : Screen()
 }
+
