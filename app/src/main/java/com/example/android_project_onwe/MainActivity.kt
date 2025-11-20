@@ -21,6 +21,10 @@ import com.example.android_project_onwe.utils.NotificationUtils
 import com.example.android_project_onwe.viewmodel.NotificationViewModel
 // ----- END NOTIFICATION IMPORTS -----
 
+// Profile Management Screen import
+import com.example.android_project_onwe.view.ProfileScreen
+
+
 class MainActivity : ComponentActivity() {
 
     // ----- NOTIFICATION RELATED -----

@@ -78,11 +78,13 @@ class AuthViewModel : ViewModel() {
     }
 
     fun login(email: String, password: String) {
+
         if (DEV_MODE) {
             _isLoggedIn.value = true
             _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
             return
         }
+
         if (email.isBlank() && password.isBlank()) {
             _authEvent.value = "Please enter your email & password"
             return
