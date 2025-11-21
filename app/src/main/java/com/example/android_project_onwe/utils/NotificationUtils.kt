@@ -42,7 +42,6 @@ object NotificationUtils {
                     android.Manifest.permission.POST_NOTIFICATIONS
                 ) != android.content.pm.PackageManager.PERMISSION_GRANTED
             ) {
-                // Permission will be requested by Activity
                 return
             }
             notify(NOTIFICATION_ID, builder.build())

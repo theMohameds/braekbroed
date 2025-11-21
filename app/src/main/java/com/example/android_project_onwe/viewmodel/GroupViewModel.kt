@@ -1,34 +1,37 @@
 package com.example.android_project_onwe.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
+import com.example.android_project_onwe.repository.NotificationRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class GroupViewModel : ViewModel() {
+class GroupViewModel(application: Application) : AndroidViewModel(application) {
 
     // Dev mode
     private val DEV_MODE = false
     private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
 
+    private val context = getApplication<Application>()
+
+    private val notificationRepo = NotificationRepository(context)
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
-
     private val _groupEvent = MutableStateFlow("")
-    val groupEvent: StateFlow<String> = _groupEvent
 
     init {
-        loadGroupsForCurrentUser()
+        listenForGroupInvites()
     }
 
     private fun getCurrentUserId(): String? {
@@ -56,6 +59,43 @@ class GroupViewModel : ViewModel() {
             }
     }
 
+    private fun listenForGroupInvites() {
+        val currentUserId = getCurrentUserId() ?: return
+        val currentUserRef = db.collection("user").document(currentUserId)
+
+        var isFirstSnapshot = true
+
+        db.collection("group")
+            .whereArrayContains("members", currentUserRef)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+
+                // Update groups list
+                _groups.value = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(id = doc.id)
+                }
+
+                // Skip notifications for first snapshot (existing groups)
+                if (isFirstSnapshot) {
+                    isFirstSnapshot = false
+                    return@addSnapshotListener
+                }
+
+                snapshot.documentChanges
+                    .filter { it.type == com.google.firebase.firestore.DocumentChange.Type.ADDED }
+                    .forEach { docChange ->
+                        val group = docChange.document.toObject(Group::class.java)
+                        val creatorId = group.createdBy?.id
+                        if (creatorId != null && creatorId != currentUserId) {
+                            notificationRepo.sendNotification(
+                                title = "You've been added to a group",
+                                content = group.name
+                            )
+                        }
+                    }
+            }
+    }
+
     fun createGroup(
         name: String,
         description: String,
@@ -80,8 +120,9 @@ class GroupViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val memberRefs = memberEmails.mapNotNull { email ->
+                    val normalizedEmail = email.trim().lowercase()
                     val snap = db.collection("user")
-                        .whereEqualTo("email", email)
+                        .whereEqualTo("email", normalizedEmail)
                         .get()
                         .await()
 
@@ -120,11 +161,15 @@ class GroupViewModel : ViewModel() {
             billFinalized = false
         )
 
-        db.collection("group")
-            .document()
-            .set(groupData)
+        val newDocRef = db.collection("group").document()
+        val newDocId = newDocRef.id
+
+        newDocRef.set(groupData)
             .addOnSuccessListener {
-                loadGroupsForCurrentUser()
+                _groups.update { current ->
+                    current + groupData.copy(id = newDocId)
+                }
+                _groupEvent.value = "Group created successfully!"
             }
             .addOnFailureListener { e ->
                 _groupEvent.value = "Failed to save group: ${e.message}"

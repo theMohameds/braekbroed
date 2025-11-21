@@ -1,4 +1,4 @@
-package com.example.android_project_onwe.data
+package com.example.android_project_onwe.repository
 
 import android.content.Context
 import com.example.android_project_onwe.utils.NotificationUtils

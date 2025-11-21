@@ -18,6 +18,7 @@ fun AppNavigation() {
     var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
     val groupViewModel: GroupViewModel = viewModel()
 
+
     val selectedItem = when (currentScreenState) {
         is Screen.Home -> "home"
         is Screen.CreateGroup -> "add"

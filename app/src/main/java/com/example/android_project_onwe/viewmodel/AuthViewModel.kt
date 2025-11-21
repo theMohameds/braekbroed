@@ -17,20 +17,19 @@ class AuthViewModel : ViewModel() {
     val currentUserId: String?
         get() = if (DEV_MODE) DEV_USER_ID else FirebaseAuth.getInstance().currentUser?.uid
 
-
     private val _authEvent = MutableStateFlow("")
     val authEvent: StateFlow<String> = _authEvent
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
 
-    // SIGN UP (real, untouched)
     fun signUp(email: String, password: String, firstName: String, lastName: String) {
+        val normalizedEmail = email.trim().lowercase()
         if (DEV_MODE) {
             _authEvent.value = "Sign up disabled in DEV MODE"
             return
         }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches()) {
             _authEvent.value = "Invalid email format"
             return
         }
@@ -44,13 +43,13 @@ class AuthViewModel : ViewModel() {
         }
 
         FirebaseAuth.getInstance()
-            .createUserWithEmailAndPassword(email, password)
+            .createUserWithEmailAndPassword(normalizedEmail, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val currentUser = FirebaseAuth.getInstance().currentUser
                     if (currentUser != null) {
                         val db = FirebaseFirestore.getInstance()
-                        val userData = User(firstName, lastName, email)
+                        val userData = User(firstName, lastName, normalizedEmail)
 
                         db.collection("user").document(currentUser.uid)
                             .set(userData)
@@ -102,18 +101,16 @@ class AuthViewModel : ViewModel() {
             return
         }
 
-
-            // NORMAL FIREBASE LOGIN
-            FirebaseAuth.getInstance()
-                .signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        _isLoggedIn.value = true
-                        _authEvent.value = "Login successful!"
-                    } else {
-                        _authEvent.value = task.exception?.message ?: "Invalid email or password."
-                    }
+        FirebaseAuth.getInstance()
+            .signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _isLoggedIn.value = true
+                    _authEvent.value = "Login successful!"
+                } else {
+                    _authEvent.value = task.exception?.message ?: "Invalid email or password."
                 }
+            }
         }
     }
 
