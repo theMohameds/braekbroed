@@ -1,4 +1,3 @@
-// File: HomeScreen.kt
 package com.example.android_project_onwe.view.screens
 
 import androidx.compose.foundation.background
