@@ -33,7 +33,10 @@ fun HomeScreen(
     val groups by viewModel.groups.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) { viewModel.loadGroupsForCurrentUser() }
+    LaunchedEffect(Unit) {
+        viewModel.loadGroupsForCurrentUser()
+        viewModel.startListeningToGroups()
+    }
 
     val filteredGroups = groups.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
@@ -128,6 +131,7 @@ fun GroupCard(group: Group, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(group.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
+                Text("Des: ${group.description}", fontSize = 12.sp, color = Color.Gray)
                 Text("Members: ${group.members.size}", fontSize = 12.sp, color = Color.Gray)
             }
 

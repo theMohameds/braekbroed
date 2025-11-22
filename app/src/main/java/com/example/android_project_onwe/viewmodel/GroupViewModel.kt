@@ -2,6 +2,7 @@ package com.example.android_project_onwe.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
 import com.example.android_project_onwe.repository.NotificationRepository
@@ -15,24 +16,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class GroupViewModel(application: Application) : AndroidViewModel(application) {
+class GroupViewModel() : ViewModel() {
 
     // Dev mode
     private val DEV_MODE = false
     private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
-
-    private val context = getApplication<Application>()
-
-    private val notificationRepo = NotificationRepository(context)
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val _groups = MutableStateFlow<List<Group>>(emptyList())
     val groups: StateFlow<List<Group>> = _groups
     private val _groupEvent = MutableStateFlow("")
-
-    init {
-        listenForGroupInvites()
-    }
 
     private fun getCurrentUserId(): String? {
         return if (DEV_MODE) DEV_USER_ID else auth.currentUser?.uid
@@ -56,43 +49,6 @@ class GroupViewModel(application: Application) : AndroidViewModel(application) {
             }
             .addOnFailureListener {
                 _groups.value = emptyList()
-            }
-    }
-
-    private fun listenForGroupInvites() {
-        val currentUserId = getCurrentUserId() ?: return
-        val currentUserRef = db.collection("user").document(currentUserId)
-
-        var isFirstSnapshot = true
-
-        db.collection("group")
-            .whereArrayContains("members", currentUserRef)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
-
-                // Update groups list
-                _groups.value = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Group::class.java)?.copy(id = doc.id)
-                }
-
-                // Skip notifications for first snapshot (existing groups)
-                if (isFirstSnapshot) {
-                    isFirstSnapshot = false
-                    return@addSnapshotListener
-                }
-
-                snapshot.documentChanges
-                    .filter { it.type == com.google.firebase.firestore.DocumentChange.Type.ADDED }
-                    .forEach { docChange ->
-                        val group = docChange.document.toObject(Group::class.java)
-                        val creatorId = group.createdBy?.id
-                        if (creatorId != null && creatorId != currentUserId) {
-                            notificationRepo.sendNotification(
-                                title = "You've been added to a group",
-                                content = group.name
-                            )
-                        }
-                    }
             }
     }
 
@@ -139,6 +95,22 @@ class GroupViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun startListeningToGroups() {
+        val currentUserId = getCurrentUserId() ?: return
+        val currentUserRef = db.collection("user").document(currentUserId)
+
+        db.collection("group")
+            .whereArrayContains("members", currentUserRef)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+
+                val updatedGroups = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(id = doc.id)
+                }
+
+                _groups.value = updatedGroups
+            }
+    }
     private fun finishGroupCreation(
         name: String,
         description: String,

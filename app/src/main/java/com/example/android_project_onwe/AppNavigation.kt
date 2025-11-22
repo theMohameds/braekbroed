@@ -14,10 +14,9 @@ import com.example.android_project_onwe.view.ProfileScreen
 import com.example.android_project_onwe.view.group.FinalizedBillScreen
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(notificationManager: AppNotificationManager) {
     var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
     val groupViewModel: GroupViewModel = viewModel()
-
 
     val selectedItem = when (currentScreenState) {
         is Screen.Home -> "home"
@@ -69,10 +68,15 @@ fun AppNavigation() {
             is Screen.GroupChat -> {
                 GroupChatView(
                     groupId = screen.groupId,
-                    onBack = { currentScreenState = Screen.Home },
+                    onBack = {
+                        notificationManager.setCurrentOpenGroup(null) // clear current group
+                        currentScreenState = Screen.Home
+                    },
                     onFinalizeBill = { groupId ->
+                        notificationManager.setCurrentOpenGroup(null) // clear current group
                         currentScreenState = Screen.FinalizedBill(groupId)
-                    }
+                    },
+                    notificationManager = notificationManager // pass it here
                 )
             }
 
@@ -91,6 +95,7 @@ fun AppNavigation() {
         }
     }
 }
+
 
 // Screens
 sealed class Screen {

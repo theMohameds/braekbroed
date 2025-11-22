@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.android_project_onwe.AppNotificationManager
 import com.example.android_project_onwe.model.Expense
 import com.example.android_project_onwe.model.Message
 import com.example.android_project_onwe.viewmodel.GroupChatViewModel
@@ -32,7 +33,8 @@ fun GroupChatView(
     groupId: String,
     onBack: () -> Unit,
     onFinalizeBill: (String) -> Unit,
-    viewModel: GroupChatViewModel = viewModel()
+    viewModel: GroupChatViewModel = viewModel(),
+    notificationManager: AppNotificationManager // add this
 ) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
@@ -42,6 +44,7 @@ fun GroupChatView(
         viewModel.listenForMessages(groupId)
         viewModel.listenForExpenses(groupId)
         viewModel.listenForPayments(groupId)
+        notificationManager.setCurrentOpenGroup(groupId)
     }
 
     val groupName by viewModel.groupName.collectAsState()
@@ -94,6 +97,7 @@ fun GroupChatView(
                 title = { Text(groupName) },
                 navigationIcon = {
                     IconButton(onClick = {
+                        notificationManager.setCurrentOpenGroup(null) // user leaves group
                         viewModel.resetValueGroupState()
                         onBack()
                     }) {
