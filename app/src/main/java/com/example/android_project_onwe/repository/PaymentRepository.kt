@@ -15,10 +15,22 @@ class PaymentRepository {
             .collection("payments")
             .orderBy("timestamp")
             .addSnapshotListener { snap, _ ->
-                val list = snap?.toObjects(Payment::class.java) ?: emptyList()
+
+                val list = snap?.documents?.mapNotNull { doc ->
+                    Payment(
+                        id = doc.getString("id") ?: "",
+                        fromUser = doc.getDocumentReference("fromUser"),
+                        toUser = doc.getDocumentReference("toUser"),
+                        amount = doc.getDouble("amount") ?: 0.0,
+                        isPaid = doc.getBoolean("isPaid") ?: false,
+                        timestamp = doc.getLong("timestamp") ?: 0L
+                    )
+                } ?: emptyList()
+
                 onPayments(list)
             }
     }
+
 
     fun createPayments(groupId: String, payments: List<Payment>, onComplete: (() -> Unit)? = null) {
         val batch = db.batch()

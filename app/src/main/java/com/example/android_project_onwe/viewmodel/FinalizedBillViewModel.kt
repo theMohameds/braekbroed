@@ -126,4 +126,9 @@ class FinalizedBillViewModel(
         paymentRepo.stopListening()
         expenseRepo.stopListening()
     }
+
+    fun sendPaymentReminder(toUserId: String, amount: Double) {
+        // Needs to be implemented.
+    }
+
 }

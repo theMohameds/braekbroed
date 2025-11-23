@@ -23,6 +23,8 @@ fun ProfileScreen(
 ) {
     val profile = viewModel.profile.value
     val isSaved = viewModel.isSaved.value
+    val errorMessage = viewModel.errorMessage.value
+    val isLoading = viewModel.isLoading.value
 
     Column(
         modifier = modifier
@@ -30,7 +32,12 @@ fun ProfileScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Profilbillede placeholder
+
+        if (isLoading) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         Image(
             painter = painterResource(id = R.drawable.ic_launcher_foreground),
             contentDescription = "Profile Picture",
@@ -49,8 +56,6 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        //  Editable Fields
-        //  Editable Fields
         OutlinedTextField(
             value = profile.firstName,
             onValueChange = { viewModel.updateProfileField("firstName", it) },
@@ -84,7 +89,6 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        //  Notifications toggle
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -98,19 +102,27 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Save button
         Button(
             onClick = { viewModel.saveProfile() },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         ) {
             Text("Save")
         }
 
-        // Confirmation message
         if (isSaved) {
             Text(
                 text = "Profile saved successfully!",
                 color = Color(0xFF2E7D32),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
