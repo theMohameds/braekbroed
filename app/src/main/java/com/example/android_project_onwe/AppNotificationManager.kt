@@ -160,28 +160,17 @@ class AppNotificationManager(private val context: Context) {
         db.collectionGroup("reminders")
             .whereEqualTo("toUserId", currentUserId)
             .addSnapshotListener { snapshot, error ->
-                Log.d("ReminderListener", "Listener callback triggered")
                 if (error != null) {
-                    Log.e("ReminderListener", "Listener error: ${error.message}")
                     return@addSnapshotListener
                 }
                 if (snapshot == null) {
-                    Log.w("ReminderListener", "Snapshot is null")
                     return@addSnapshotListener
                 }
-
-                Log.d("ReminderListener", "Snapshot size: ${snapshot.size()}")
-
-                snapshot.documents.forEach { doc ->
-                    Log.d("ReminderListener", "Doc: ${doc.id}, fields: ${doc.data}")
-                }
-
                 snapshot.documentChanges
                     .filter { it.type == DocumentChange.Type.ADDED }
                     .forEach { change ->
                         val amount = change.document.getDouble("amount") ?: return@forEach
                         val groupName = change.document.getString("groupName") ?: "Group"
-                        Log.d("ReminderListener", "New reminder for $groupName: $amount")
 
                         notificationRepo.sendNotification(
                             title = "You owe in $groupName",

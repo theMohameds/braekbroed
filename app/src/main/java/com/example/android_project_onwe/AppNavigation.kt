@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Scaffold
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.android_project_onwe.Screen.*
 import com.example.android_project_onwe.view.BottomNavigationBar
 import com.example.android_project_onwe.view.group.GroupChatView
 import com.example.android_project_onwe.view.screens.CreateGroupScreen
@@ -13,6 +14,7 @@ import com.example.android_project_onwe.viewmodel.GroupViewModel
 import com.example.android_project_onwe.view.ProfileScreen
 import com.example.android_project_onwe.view.group.FinalizedBillScreen
 import com.example.android_project_onwe.view.group.GroupExpensesScreen
+import com.example.android_project_onwe.view.group.GroupSettingsScreen
 
 @Composable
 fun AppNavigation(notificationManager: AppNotificationManager) {
@@ -27,11 +29,14 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
         is Screen.Profile -> "profile"
         is Screen.FinalizedBill -> ""
         is Screen.GroupExpenses -> ""
+        is Screen.GroupSettings -> ""
     }
 
     Scaffold(
         bottomBar = {
-            if (currentScreenState !is Screen.GroupChat && currentScreenState !is Screen.GroupExpenses) {
+            if (currentScreenState !is Screen.GroupChat && currentScreenState !is Screen.GroupExpenses
+                && currentScreenState !is Screen.FinalizedBill
+                && currentScreenState !is Screen.GroupSettings) {
                 BottomNavigationBar(
                     selectedItem = selectedItem,
                     onItemSelected = { item ->
@@ -53,7 +58,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                     viewModel = groupViewModel,
                     modifier = Modifier.padding(paddingValues),
                     onGroupClick = { group ->
-                        currentScreenState = Screen.GroupChat(group.id)
+                        currentScreenState = GroupChat(group.id)
                     }
                 )
             }
@@ -82,7 +87,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                     groupId = screen.groupId,
                     onBack = {
                         notificationManager.setCurrentOpenGroup(screen.groupId)
-                        currentScreenState = Screen.GroupExpenses(screen.groupId)
+                        currentScreenState = GroupExpenses(screen.groupId)
                     }
                 )
             }
@@ -96,14 +101,26 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                     groupId = screen.groupId,
                     onBack = {
                         notificationManager.setCurrentOpenGroup(screen.groupId)
-                        currentScreenState = Screen.GroupChat(screen.groupId)
+                        currentScreenState = GroupChat(screen.groupId)
                     },
                     onFinalizeBill = { groupId ->
                         notificationManager.setCurrentOpenGroup(null)
-                        currentScreenState = Screen.FinalizedBill(groupId)
+                        currentScreenState = FinalizedBill(groupId)
                     },
                     notificationManager = notificationManager
                 )
+            }
+
+            is Screen.GroupSettings -> {
+                GroupSettingsScreen(
+                    groupId = screen.groupId,
+                    onBack = {
+                        notificationManager.setCurrentOpenGroup(screen.groupId)
+                        currentScreenState = GroupChat(screen.groupId)
+                    },
+                    notificationManager = notificationManager,
+                    onNavigate = { screen -> currentScreenState = screen },
+                    )
             }
         }
     }
@@ -117,4 +134,5 @@ sealed class Screen {
     data class FinalizedBill(val groupId: String) : Screen()
     object Profile : Screen()
     data class GroupExpenses(val groupId: String) : Screen()
+    data class GroupSettings(val groupId: String) : Screen()
 }

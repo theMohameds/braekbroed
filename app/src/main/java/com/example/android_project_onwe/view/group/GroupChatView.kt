@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -11,8 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,20 +47,9 @@ fun GroupChatView(
     }
 
     val groupName by viewModel.groupName.collectAsState()
-    val billFinalized by viewModel.billFinalized.collectAsState()
     val messages by viewModel.messages.collectAsState()
     val expenses by viewModel.expenses.collectAsState()
     val membersMap by viewModel.membersMap.collectAsState()
-
-    val memberCount = membersMap.size.takeIf { it > 0 } ?: 1
-    val totalExpenses = expenses.sumOf { it.amount }
-    val equalShare = totalExpenses / memberCount
-    val userPaid = expenses.filter { it.payerId == currentUserId }.sumOf { it.amount }
-    val userBalance = userPaid - equalShare
-
-    val balanceColor =
-        if (userBalance >= 0) Color(0xFF2E7D32)
-        else Color(0xFFD32F2F)
 
     val merged = remember(messages, expenses) {
         (messages + expenses)
@@ -72,12 +63,6 @@ fun GroupChatView(
     }
 
     var input by remember { mutableStateOf("") }
-    var showAddExpense by remember { mutableStateOf(false) }
-
-    var showExpenseOverview by remember { mutableStateOf(false) }
-    var editingExpense by remember { mutableStateOf<Expense?>(null) }
-    var deletingExpense by remember { mutableStateOf<Expense?>(null) }
-
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
@@ -145,7 +130,7 @@ fun GroupChatView(
                 FilledTonalButton(
                     onClick = {
                         notificationManager.setCurrentOpenGroup(groupId)
-                        onNavigate(Screen.GroupExpenses(groupId))
+                        onNavigate(Screen.GroupSettings(groupId))
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -185,7 +170,7 @@ fun GroupChatView(
             }
 
             Row(
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp)
                     .imePadding(),
@@ -196,9 +181,22 @@ fun GroupChatView(
                     onValueChange = { input = it },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Type a message…") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (input.isNotBlank()) {
+                                viewModel.sendMessage(groupId, input)
+                                input = ""
+                                focus.clearFocus()
+                                scope.launch { listState.animateScrollToItem(merged.size) }
+                            }
+                        }
+                    )
                 )
-                Spacer(Modifier.width(8.dp))
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Button(
                     onClick = {
                         if (input.isNotBlank()) {
@@ -207,11 +205,13 @@ fun GroupChatView(
                             focus.clearFocus()
                             scope.launch { listState.animateScrollToItem(merged.size) }
                         }
-                    }
+                    },
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Text("Send")
                 }
             }
+
         }
     }
 }

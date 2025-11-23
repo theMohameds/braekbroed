@@ -126,20 +126,6 @@ fun GroupExpensesScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Add Expense")
                 }
-                FilledTonalButton(
-                    onClick = {
-                        viewModel.sendPaymentReminders(
-                            groupId = groupId,
-                            groupName = groupName,
-                            members = membersMap,
-                            expenses = expenses,
-                            notificationManager = notificationManager
-                        )
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Send reminder")
-                }
 
                 Button(
                     onClick = {

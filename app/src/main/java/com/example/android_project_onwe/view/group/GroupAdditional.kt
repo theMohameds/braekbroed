@@ -1,6 +1,7 @@
 package com.example.android_project_onwe.view.group
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -226,26 +227,49 @@ fun ChatMessageBubble(isMe: Boolean, senderName: String, text: String) {
     }
 }
 
+
 @Composable
 fun ExpenseBubble(isMe: Boolean, senderName: String, text: String) {
-    val bg = if (isMe) Color(0xFFBBDEFB) else Color(0xFFFFF9C4)
+
+    val darkMode = isSystemInDarkTheme()
+
+    val bg = if (isMe) {
+        if (darkMode) Color(0xFF3C7FD5) else Color(0xFFBBDEFB)
+    } else {
+        if (darkMode) Color(0xFFE1AE4F) else Color(0xFFFFF9C4)
+    }
+
+    val content = if (isMe) {
+        if (darkMode) Color.White else Color.Black
+    } else {
+        if (darkMode) Color.Black else Color.Black
+    }
+
     Column(Modifier.fillMaxWidth()) {
+
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
-        ) { Text(senderName, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        ) {
+            Text(senderName, color = if (darkMode) Color.LightGray else Color.DarkGray)
+        }
+
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
         ) {
             Surface(
                 color = bg,
+                contentColor = content,
                 shape = RoundedCornerShape(14.dp),
                 shadowElevation = 1.dp,
                 modifier = Modifier.animateContentSize()
             ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text(if (isMe) "You added an expense" else "Expense", fontWeight = FontWeight.Bold)
+                    Text(
+                        if (isMe) "You added an expense" else "Expense",
+                        fontWeight = FontWeight.Bold
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(text)
                 }
@@ -253,6 +277,7 @@ fun ExpenseBubble(isMe: Boolean, senderName: String, text: String) {
         }
     }
 }
+
 
 @Composable
 fun SummaryRow(label: String, value: String, valueColor: Color, bold: Boolean = false) {

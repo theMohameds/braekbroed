@@ -97,7 +97,7 @@ fun CreateGroupScreen(
                                 newMember = it
                                 duplicateMemberError = false
                             },
-                            label = { Text("Member Email / Name") },
+                            label = { Text("Member Email") },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             isError = duplicateMemberError

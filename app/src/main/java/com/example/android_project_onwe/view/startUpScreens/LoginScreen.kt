@@ -1,17 +1,17 @@
 package com.example.android_project_onwe.view.startUpScreens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_project_onwe.viewmodel.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -19,14 +19,17 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel = viewModel(),
-    onSignUpClick: () -> Unit // <-- added parameter for switching
+    onSignUpClick: () -> Unit
 ) {
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
-    val buttonWidth = 120.dp
+    val buttonWidth = 160.dp
 
-    // Collect events from the ViewModel
+
+
+    // Collect events from ViewModel
     LaunchedEffect(Unit) {
         authViewModel.authEvent.collectLatest { msg ->
             message = msg
@@ -36,13 +39,25 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
+
+            // ----- TITLE -----
+            Text(
+                text = "BRÆKBRØD",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            // ----- EMAIL FIELD -----
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -51,9 +66,11 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(
                     autoCorrect = false,
                     keyboardType = KeyboardType.Email
-                )
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
 
+            // ----- PASSWORD FIELD -----
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -63,9 +80,11 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(
                     autoCorrect = false,
                     keyboardType = KeyboardType.Password
-                )
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
 
+            // ----- LOGIN BUTTON -----
             Button(
                 onClick = { authViewModel.login(email, password) },
                 modifier = Modifier.width(buttonWidth)
@@ -77,10 +96,14 @@ fun LoginScreen(
             TextButton(onClick = onSignUpClick) {
                 Text("Don't have an account? Sign Up")
             }
-            // ----- END SWITCH TO SIGNUP -----
 
+            // ----- ERROR MESSAGE -----
             if (message.isNotEmpty()) {
-                Text(text = message, modifier = Modifier.padding(top = 8.dp))
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }
