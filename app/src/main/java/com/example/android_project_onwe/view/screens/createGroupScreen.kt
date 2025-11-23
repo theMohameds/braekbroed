@@ -2,12 +2,14 @@ package com.example.android_project_onwe.view.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_project_onwe.model.Group
@@ -26,118 +28,146 @@ fun CreateGroupScreen(
     var duplicateMemberError by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text("Create New Group", style = MaterialTheme.typography.titleLarge)
-        }
-
-        item {
-            OutlinedTextField(
-                value = groupName,
-                onValueChange = { groupName = it },
-                label = { Text("Group Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        item {
-            OutlinedTextField(
-                value = groupDescription,
-                onValueChange = { groupDescription = it },
-                label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = newMember,
-                    onValueChange = {
-                        newMember = it
-                        duplicateMemberError = false
-                    },
-                    label = { Text("Add Member") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    isError = duplicateMemberError
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Create New Group",
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background, // same as background
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                ),
+                modifier = Modifier.shadow(
+                    elevation = 4.dp // subtle floating effect
                 )
-                Button(onClick = {
-                    if (newMember.isNotBlank()) {
-                        if (!members.contains(newMember)) {
-                            members = members + newMember
-                            newMember = ""
-                        } else {
-                            duplicateMemberError = true
+            )
+        }
+
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp) // space between sections
+        ) {
+            // Group Info
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = groupName,
+                        onValueChange = { groupName = it },
+                        label = { Text("Group Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = groupDescription,
+                        onValueChange = { groupDescription = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Add Members
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Add Members", style = MaterialTheme.typography.titleMedium)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically // center button
+                    ) {
+                        OutlinedTextField(
+                            value = newMember,
+                            onValueChange = {
+                                newMember = it
+                                duplicateMemberError = false
+                            },
+                            label = { Text("Member Email / Name") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            isError = duplicateMemberError
+                        )
+
+                        Button(onClick = {
+                            if (newMember.isNotBlank()) {
+                                if (!members.contains(newMember)) {
+                                    members = members + newMember
+                                    newMember = ""
+                                } else {
+                                    duplicateMemberError = true
+                                }
+                            }
+                        }) {
+                            Text("Add")
                         }
                     }
-                }) {
-                    Text("Add")
+
+                    if (duplicateMemberError) {
+                        Text("Member already added", color = MaterialTheme.colorScheme.error)
+                    }
+
+                    if (members.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            members.forEach { member ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(member, modifier = Modifier.weight(1f))
+                                    IconButton(onClick = { members = members - member }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Remove member"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            if (duplicateMemberError) {
-                Text("Member already added", color = MaterialTheme.colorScheme.error)
-            }
-        }
 
-        if (members.isNotEmpty()) {
+            // Submit Button
             item {
-                Text("Members:")
-            }
-
-            items(members) { member ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Button(
+                    onClick = {
+                        if (groupName.isNotBlank() && members.isNotEmpty()) {
+                            isSubmitting = true
+                            viewModel.createGroup(
+                                name = groupName,
+                                description = groupDescription,
+                                memberEmailsOrRefs = members
+                            )
+                            groupName = ""
+                            groupDescription = ""
+                            members = emptyList()
+                            newMember = ""
+                            duplicateMemberError = false
+                            isSubmitting = false
+                        }
+                    },
+                    enabled = groupName.isNotBlank() && members.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(member, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { members = members - member }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Remove member"
-                        )
-                    }
+                    Text(if (isSubmitting) "Creating..." else "Create Group")
                 }
             }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    if (groupName.isNotBlank() && members.isNotEmpty()) {
-                        isSubmitting = true
-
-                        viewModel.createGroup(
-                            name = groupName,
-                            description = groupDescription,
-                            memberEmailsOrRefs = members
-                        )
-
-                        // reset fields
-                        groupName = ""
-                        groupDescription = ""
-                        members = emptyList()
-                        newMember = ""
-                        duplicateMemberError = false
-                        isSubmitting = false
-                    }
-                },
-                enabled = groupName.isNotBlank() && members.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isSubmitting) "Creating..." else "Create Group")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

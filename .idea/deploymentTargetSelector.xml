@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2025-11-22T15:33:31.124128600Z">
+        <DropdownSelection timestamp="2025-11-22T20:54:16.524031600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\flore\.android\avd\Medium_Phone.avd" />

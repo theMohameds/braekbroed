@@ -12,23 +12,26 @@ import com.example.android_project_onwe.view.screens.HomeScreen
 import com.example.android_project_onwe.viewmodel.GroupViewModel
 import com.example.android_project_onwe.view.ProfileScreen
 import com.example.android_project_onwe.view.group.FinalizedBillScreen
+import com.example.android_project_onwe.view.group.GroupExpensesScreen
 
 @Composable
 fun AppNavigation(notificationManager: AppNotificationManager) {
     var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
     val groupViewModel: GroupViewModel = viewModel()
 
+    // Determine the selected item for the nav bars
     val selectedItem = when (currentScreenState) {
         is Screen.Home -> "home"
         is Screen.CreateGroup -> "add"
         is Screen.GroupChat -> ""
         is Screen.Profile -> "profile"
         is Screen.FinalizedBill -> ""
+        is Screen.GroupExpenses -> ""
     }
 
     Scaffold(
         bottomBar = {
-            if (currentScreenState !is Screen.GroupChat) {
+            if (currentScreenState !is Screen.GroupChat && currentScreenState !is Screen.GroupExpenses) {
                 BottomNavigationBar(
                     selectedItem = selectedItem,
                     onItemSelected = { item ->
@@ -45,7 +48,6 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
     ) { paddingValues ->
 
         when (val screen = currentScreenState) {
-
             is Screen.Home -> {
                 HomeScreen(
                     viewModel = groupViewModel,
@@ -59,9 +61,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
             is Screen.CreateGroup -> {
                 CreateGroupScreen(
                     viewModel = groupViewModel,
-                    onGroupCreated = {
-                        currentScreenState = Screen.Home
-                    }
+                    onGroupCreated = { currentScreenState = Screen.Home }
                 )
             }
 
@@ -69,40 +69,52 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                 GroupChatView(
                     groupId = screen.groupId,
                     onBack = {
-                        notificationManager.setCurrentOpenGroup(null) // clear current group
+                        notificationManager.setCurrentOpenGroup(null)
                         currentScreenState = Screen.Home
                     },
-                    onFinalizeBill = { groupId ->
-                        notificationManager.setCurrentOpenGroup(null) // clear current group
-                        currentScreenState = Screen.FinalizedBill(groupId)
-                    },
-                    notificationManager = notificationManager // pass it here
+                    onNavigate = { screen -> currentScreenState = screen },
+                    notificationManager = notificationManager,
                 )
             }
 
             is Screen.FinalizedBill -> {
                 FinalizedBillScreen(
                     groupId = screen.groupId,
-                    onBack = { currentScreenState = Screen.Home }
+                    onBack = {
+                        notificationManager.setCurrentOpenGroup(screen.groupId)
+                        currentScreenState = Screen.GroupExpenses(screen.groupId)
+                    }
                 )
             }
 
             is Screen.Profile -> {
-                ProfileScreen(
-                    modifier = Modifier.padding(paddingValues)
+                ProfileScreen(modifier = Modifier.padding(paddingValues))
+            }
+
+            is Screen.GroupExpenses -> {
+                GroupExpensesScreen(
+                    groupId = screen.groupId,
+                    onBack = {
+                        notificationManager.setCurrentOpenGroup(screen.groupId)
+                        currentScreenState = Screen.GroupChat(screen.groupId)
+                    },
+                    onFinalizeBill = { groupId ->
+                        notificationManager.setCurrentOpenGroup(null)
+                        currentScreenState = Screen.FinalizedBill(groupId)
+                    },
+                    notificationManager = notificationManager
                 )
             }
         }
     }
 }
 
-
-// Screens
+// Screens sealed class
 sealed class Screen {
     object Home : Screen()
     object CreateGroup : Screen()
     data class GroupChat(val groupId: String) : Screen()
     data class FinalizedBill(val groupId: String) : Screen()
     object Profile : Screen()
+    data class GroupExpenses(val groupId: String) : Screen()
 }
-

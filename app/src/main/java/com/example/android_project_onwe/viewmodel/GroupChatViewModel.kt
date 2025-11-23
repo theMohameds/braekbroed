@@ -2,6 +2,7 @@ package com.example.android_project_onwe.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.android_project_onwe.AppNotificationManager
 import com.example.android_project_onwe.model.Debt
 import com.example.android_project_onwe.model.Expense
 import com.example.android_project_onwe.model.Message
@@ -287,5 +288,25 @@ class GroupChatViewModel(
         viewModelScope.launch {
             expenseRepo.deleteExpense(groupId, expenseId)
         }
+    }
+
+    fun sendPaymentReminders(
+        groupId: String,
+        groupName: String,
+        members: Map<String, String>,
+        expenses: List<Expense>,
+        notificationManager: AppNotificationManager
+    ) {
+        // Convert member userIds → DocumentReference
+        val memberRefs = members.keys.map { userId ->
+            FirebaseFirestore.getInstance().collection("user").document(userId)
+        }
+
+        notificationManager.sendPaymentRemindersToFirestore(
+            groupId = groupId,
+            groupName = groupName,
+            members = memberRefs,
+            expenses = expenses
+        )
     }
 }
