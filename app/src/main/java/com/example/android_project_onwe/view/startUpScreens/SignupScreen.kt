@@ -120,7 +120,7 @@ fun SignUpScreen(
             Button(
                 onClick = {
                     if (password == confirmPassword) {
-                        authViewModel.signUp(email, password, firstName, lastName)
+                        authViewModel.signUp(email, password, firstName, lastName, phoneNumber)
                     } else {
                         message = "Passwords do not match"
                     }

@@ -1,6 +1,7 @@
 package com.example.android_project_onwe.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.example.android_project_onwe.model.ProfileModel
 import com.example.android_project_onwe.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -16,55 +17,83 @@ class AuthViewModel : ViewModel() {
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
 
-    fun signUp(email: String, password: String, firstName: String, lastName: String) {
+    fun signUp(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        phoneNumber: String = "" // optional if you want
+    ) {
+
         val normalizedEmail = email.trim().lowercase()
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches()) {
-            _authEvent.value = "Invalid email format"
-            return
-        }
-        if (password.length < 8) {
-            _authEvent.value = "Password must be at least 8 characters"
-            return
-        }
-        if (firstName.isBlank() || lastName.isBlank()) {
-            _authEvent.value = "Please enter your first and last name"
-            return
+        // --- Validation ---
+        when {
+            firstName.isBlank() || lastName.isBlank() -> {
+                _authEvent.value = "Please enter your first and last name"
+                return
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches() -> {
+                _authEvent.value = "Invalid email format"
+                return
+            }
+            password.length < 8 -> {
+                _authEvent.value = "Password must be at least 8 characters"
+                return
+            }
         }
 
+        // --- Firebase sign up ---
         FirebaseAuth.getInstance()
             .createUserWithEmailAndPassword(normalizedEmail, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val currentUser = FirebaseAuth.getInstance().currentUser
-                    if (currentUser != null) {
-                        val db = FirebaseFirestore.getInstance()
-                        val userData = User(firstName, lastName, normalizedEmail)
 
-                        db.collection("user").document(currentUser.uid)
-                            .set(userData)
-                            .addOnSuccessListener {
-                                _isLoggedIn.value = true
-                                _authEvent.value = "Sign up successful!"
-                            }
-                            .addOnFailureListener { e ->
-                                currentUser.delete()
-                                _authEvent.value = "Failed to save user data. Rolled back."
-                            }
-                    } else {
-                        _authEvent.value = "Failed to get current user"
-                    }
-                } else {
-                    // --- Safe Error Messages (C) ---
+                if (!task.isSuccessful) {
+
                     val message = when (task.exception) {
-                        is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Email already in use."
-                        is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Password is too weak."
+                        is com.google.firebase.auth.FirebaseAuthUserCollisionException ->
+                            "Email already in use."
+                        is com.google.firebase.auth.FirebaseAuthWeakPasswordException ->
+                            "Password is too weak."
                         else -> "Sign up failed. Please try again."
                     }
+
                     _authEvent.value = message
+                    return@addOnCompleteListener
                 }
+
+                // --- User created successfully ---
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                    ?: run {
+                        _authEvent.value = "Failed to get current user"
+                        return@addOnCompleteListener
+                    }
+
+                // Build Firestore profile
+                val profile = ProfileModel(
+                    firstName = firstName,
+                    lastName = lastName,
+                    phone = phoneNumber,
+                    email = normalizedEmail,
+                    notificationsEnabled = true
+                )
+
+                // Save to Firestore under "profile" collection
+                FirebaseFirestore.getInstance()
+                    .collection("user")
+                    .document(currentUser.uid)
+                    .set(profile)
+                    .addOnSuccessListener {
+                        _isLoggedIn.value = true
+                        _authEvent.value = "Sign up successful!"
+                    }
+                    .addOnFailureListener {
+                        currentUser.delete() // rollback user creation
+                        _authEvent.value = "Failed to save profile. Rolled back."
+                    }
             }
     }
+
 
     fun login(email: String, password: String) {
 
