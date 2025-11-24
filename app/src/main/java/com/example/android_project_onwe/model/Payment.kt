@@ -8,6 +8,7 @@ data class Payment(
     val toUser: DocumentReference? = null,
     val amount: Double = 0.0,
     val isPaid: Boolean = false,
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    //local used for payment failure, to reset slider.
+    val failed: Boolean = false
 )
-

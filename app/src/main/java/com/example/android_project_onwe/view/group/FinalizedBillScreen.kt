@@ -20,11 +20,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_project_onwe.viewmodel.FinalizedBillViewModel
 import com.example.android_project_onwe.model.Expense
 import com.google.firebase.auth.FirebaseAuth
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +53,8 @@ fun FinalizedBillScreen(
 
     val paymentsToBeMade = payments.filter { it.fromUser?.id == currentUserId }
     val paymentsToBeReceived = payments.filter { it.toUser?.id == currentUserId }
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -143,12 +147,14 @@ fun FinalizedBillScreen(
                                     "%.2f kr".format(p.amount),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+
                             }
 
                             SlideToPay(
                                 isPaid = p.isPaid,
+                                failed = p.failed,
                                 onSlideComplete = {
-                                    viewModel.togglePaid(groupId, p.id, true)
+                                    viewModel.togglePaid(context, groupId, p.id, true)
                                 }
                             )
                         }
@@ -157,7 +163,6 @@ fun FinalizedBillScreen(
             }
 
             Spacer(Modifier.height(28.dp))
-
 
             Text("Payments to be received", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
@@ -229,89 +234,107 @@ private fun SummaryRow(label: String, value: String) {
     }
 }
 
-@Composable
-fun SlideToPay(
-    isPaid: Boolean,
-    onSlideComplete: () -> Unit
-) {
-    var offsetX by remember { mutableStateOf(0f) }
-    var isSliding by remember { mutableStateOf(false) }
 
-    val sliderHeight = 40.dp
-    val thumbSize = 40.dp
-    val corner = RoundedCornerShape(20.dp)
-    val bgColor = MaterialTheme.colorScheme.surfaceVariant
-    val activeColor = Color(0xFF58A85C)
-    val thumbColor = MaterialTheme.colorScheme.primary
-    val textColor = MaterialTheme.colorScheme.onSurface
-    val completedTextColor = Color.White
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth(0.7f)
-            .height(sliderHeight)
-            .clip(corner)
-            .background(bgColor)
+    @Composable
+    fun SlideToPay(
+        isPaid: Boolean,
+        failed: Boolean = false,
+        onSlideComplete: () -> Unit
     ) {
-        val maxWidthPx = constraints.maxWidth.toFloat() - with(LocalDensity.current) { thumbSize.toPx() }
+        var offsetX by remember { mutableStateOf(0f) }
+        var isSliding by remember { mutableStateOf(false) }
 
-        // Lock thumb at end if payment is done
-        val currentOffset = if (isPaid) maxWidthPx else offsetX
-        val progress = currentOffset / maxWidthPx
+        LaunchedEffect(failed) {
+            if (failed) {
+                offsetX = 0f
+            }
+        }
 
-        // Active track fills up to thumb
-        Box(
+        LaunchedEffect(isPaid) {
+            if (!isPaid && !failed && !isSliding) {
+                offsetX = 0f
+            }
+        }
+
+        val sliderHeight = 40.dp
+        val thumbSize = 40.dp
+        val corner = RoundedCornerShape(20.dp)
+
+        val bgColor = if (failed) Color(0xFFFFEBEE) else MaterialTheme.colorScheme.surfaceVariant
+        val activeColor = if (failed) Color(0xFFD32F2F) else Color(0xFF58A85C)
+        val thumbColor = if (failed) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
+
+        val textColor = MaterialTheme.colorScheme.onSurface
+        val completedTextColor = Color.White
+
+        BoxWithConstraints(
             modifier = Modifier
-                .fillMaxHeight()
-                .width(with(LocalDensity.current) { (currentOffset + thumbSize.toPx()).toDp() })
+                .fillMaxWidth(0.7f)
+                .height(sliderHeight)
                 .clip(corner)
-                .background(activeColor)
-        )
+                .background(bgColor)
+        ) {
+            val maxWidthPx =
+                constraints.maxWidth.toFloat() - with(LocalDensity.current) { thumbSize.toPx() }
 
-        // Center text
-        Text(
-            text = if (isPaid) "Payment completed ✔" else "Slide to pay",
-            modifier = Modifier.align(Alignment.Center),
-            color = if (isPaid) completedTextColor else textColor,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.bodyMedium
-        )
+            val currentOffset = if (isPaid) maxWidthPx else offsetX
 
-        // Thumb (ball), vertically centered
-        Box(
-            modifier = Modifier
-                .size(thumbSize)
-                .offset { IntOffset(currentOffset.toInt(), ((sliderHeight - thumbSize) / 2).roundToPx()) }
-                .clip(CircleShape)
-                .background(thumbColor)
-                .pointerInput(isPaid) {
-                    if (!isPaid) {
-                        detectDragGestures(
-                            onDragStart = { isSliding = true },
-                            onDrag = { change, dragAmount ->
-                                change.consume()
-                                offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxWidthPx)
-                            },
-                            onDragEnd = {
-                                isSliding = false
-                                if (offsetX >= maxWidthPx * 0.95f) {
-                                    offsetX = maxWidthPx
-                                    onSlideComplete()
-                                } else {
-                                    offsetX = 0f
-                                }
-                            }
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(with(LocalDensity.current) { (currentOffset + thumbSize.toPx()).toDp() })
+                    .clip(corner)
+                    .background(activeColor)
+            )
+
+            Text(
+                text = when {
+                    failed -> "Try again"
+                    isPaid -> "Payment completed ✔"
+                    else -> "Slide to pay"
+                },
+                modifier = Modifier.align(Alignment.Center),
+                color = when {
+                    failed -> Color(0xFFD32F2F)
+                    isPaid -> completedTextColor
+                    else -> textColor
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+
+            Box(
+                modifier = Modifier
+                    .size(thumbSize)
+                    .offset {
+                        IntOffset(
+                            currentOffset.roundToInt(),
+                            ((sliderHeight - thumbSize) / 2).roundToPx()
                         )
                     }
-                }
-        )
+                    .clip(CircleShape)
+                    .background(thumbColor)
+                    .pointerInput(isPaid, failed) {
+                        if (!isPaid) {
+                            detectDragGestures(
+                                onDragStart = { isSliding = true },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    offsetX = (offsetX + dragAmount.x)
+                                        .coerceIn(0f, maxWidthPx)
+                                },
+                                onDragEnd = {
+                                    isSliding = false
+                                    if (offsetX >= maxWidthPx * 0.95f) {
+                                        offsetX = maxWidthPx
+                                        onSlideComplete()
+                                    } else {
+                                        offsetX = 0f
+                                    }
+                                }
+                            )
+                        }
+                    }
+            )
+        }
     }
-}
-
-
-
-
-
-
-
-

@@ -18,32 +18,32 @@ import com.example.android_project_onwe.view.group.GroupSettingsScreen
 
 @Composable
 fun AppNavigation(notificationManager: AppNotificationManager) {
-    var currentScreenState by remember { mutableStateOf<Screen>(Screen.Home) }
+    var currentScreenState by remember { mutableStateOf<Screen>(Home) }
     val groupViewModel: GroupViewModel = viewModel()
 
     // Determine the selected item for the nav bars
     val selectedItem = when (currentScreenState) {
-        is Screen.Home -> "home"
-        is Screen.CreateGroup -> "add"
-        is Screen.GroupChat -> ""
-        is Screen.Profile -> "profile"
-        is Screen.FinalizedBill -> ""
-        is Screen.GroupExpenses -> ""
-        is Screen.GroupSettings -> ""
+        is Home -> "home"
+        is CreateGroup -> "add"
+        is GroupChat -> ""
+        is Profile -> "profile"
+        is FinalizedBill -> ""
+        is GroupExpenses -> ""
+        is GroupSettings -> ""
     }
 
     Scaffold(
         bottomBar = {
-            if (currentScreenState !is Screen.GroupChat && currentScreenState !is Screen.GroupExpenses
-                && currentScreenState !is Screen.FinalizedBill
-                && currentScreenState !is Screen.GroupSettings) {
+            if (currentScreenState !is GroupChat && currentScreenState !is GroupExpenses
+                && currentScreenState !is FinalizedBill
+                && currentScreenState !is GroupSettings) {
                 BottomNavigationBar(
                     selectedItem = selectedItem,
                     onItemSelected = { item ->
                         currentScreenState = when (item) {
-                            "home" -> Screen.Home
-                            "add" -> Screen.CreateGroup
-                            "profile" -> Screen.Profile
+                            "home" -> Home
+                            "add" -> CreateGroup
+                            "profile" -> Profile
                             else -> currentScreenState
                         }
                     }
@@ -53,7 +53,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
     ) { paddingValues ->
 
         when (val screen = currentScreenState) {
-            is Screen.Home -> {
+            is Home -> {
                 HomeScreen(
                     viewModel = groupViewModel,
                     modifier = Modifier.padding(paddingValues),
@@ -63,26 +63,26 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                 )
             }
 
-            is Screen.CreateGroup -> {
+            is CreateGroup -> {
                 CreateGroupScreen(
                     viewModel = groupViewModel,
-                    onGroupCreated = { currentScreenState = Screen.Home }
+                    onGroupCreated = { currentScreenState = Home }
                 )
             }
 
-            is Screen.GroupChat -> {
+            is GroupChat -> {
                 GroupChatView(
                     groupId = screen.groupId,
                     onBack = {
                         notificationManager.setCurrentOpenGroup(null)
-                        currentScreenState = Screen.Home
+                        currentScreenState = Home
                     },
                     onNavigate = { screen -> currentScreenState = screen },
                     notificationManager = notificationManager,
                 )
             }
 
-            is Screen.FinalizedBill -> {
+            is FinalizedBill -> {
                 FinalizedBillScreen(
                     groupId = screen.groupId,
                     onBack = {
@@ -92,11 +92,11 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                 )
             }
 
-            is Screen.Profile -> {
+            is Profile -> {
                 ProfileScreen(modifier = Modifier.padding(paddingValues))
             }
 
-            is Screen.GroupExpenses -> {
+            is GroupExpenses -> {
                 GroupExpensesScreen(
                     groupId = screen.groupId,
                     onBack = {
@@ -111,7 +111,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                 )
             }
 
-            is Screen.GroupSettings -> {
+            is GroupSettings -> {
                 GroupSettingsScreen(
                     groupId = screen.groupId,
                     onBack = {

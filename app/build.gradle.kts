@@ -58,6 +58,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.work.runtime.ktx)
     debugImplementation("androidx.compose.ui:ui-tooling")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
