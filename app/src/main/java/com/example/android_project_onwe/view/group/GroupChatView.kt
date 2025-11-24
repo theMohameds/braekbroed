@@ -37,6 +37,7 @@ fun GroupChatView(
 ) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
+    // Load all initial data
     LaunchedEffect(groupId) {
         viewModel.loadGroupName(groupId)
         viewModel.loadGroupMembersAndNames(groupId)
@@ -51,10 +52,11 @@ fun GroupChatView(
     val expenses by viewModel.expenses.collectAsState()
     val membersMap by viewModel.membersMap.collectAsState()
 
-    // Optimized merged list
-    val merged by remember(messages, expenses) {
+    // Merge messages and expenses safely
+    val merged by remember(messages, expenses, membersMap) {
         derivedStateOf {
-            (messages + expenses).sortedBy {
+            if (membersMap.isEmpty()) emptyList()
+            else (messages + expenses).sortedBy {
                 when (it) {
                     is Message -> it.timestamp
                     is Expense -> it.timestamp
@@ -69,9 +71,14 @@ fun GroupChatView(
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
 
+    // Flag to scroll after sending a message
+    val shouldScroll = remember { mutableStateOf(false) }
+
+    // Scroll when a new message appears
     LaunchedEffect(merged.size) {
-        if (merged.isNotEmpty() && listState.firstVisibleItemIndex >= merged.size - 2) {
+        if (shouldScroll.value && merged.isNotEmpty()) {
             listState.scrollToItem(merged.size - 1)
+            shouldScroll.value = false
         }
     }
 
@@ -112,6 +119,7 @@ fun GroupChatView(
         ) {
             Spacer(Modifier.height(10.dp))
 
+            // Buttons for Expenses and Group Settings
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -135,6 +143,7 @@ fun GroupChatView(
 
             Spacer(Modifier.height(10.dp))
 
+            // Chat and expense list
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -174,6 +183,7 @@ fun GroupChatView(
                 }
             }
 
+            // Input field and send button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,7 +204,7 @@ fun GroupChatView(
                                 viewModel.sendMessage(groupId, input)
                                 input = ""
                                 focus.clearFocus()
-                                scope.launch { listState.scrollToItem(merged.size - 1) }
+                                shouldScroll.value = true
                             }
                         }
                     )
@@ -208,7 +218,7 @@ fun GroupChatView(
                             viewModel.sendMessage(groupId, input)
                             input = ""
                             focus.clearFocus()
-                            scope.launch { listState.scrollToItem(merged.size - 1) }
+                            shouldScroll.value = true
                         }
                     },
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
