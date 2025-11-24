@@ -1,67 +1,108 @@
 package com.example.android_project_onwe.viewmodel
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
 import com.example.android_project_onwe.repository.GroupSettingsRepository
 import com.google.firebase.firestore.DocumentReference
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.google.firebase.firestore.ListenerRegistration
 
 class GroupSettingsViewModel : ViewModel() {
 
     private val repo = GroupSettingsRepository()
 
-    private val _group = MutableStateFlow<Group?>(null)
-    val group: StateFlow<Group?> = _group
+    var group = mutableStateOf<Group?>(null)
+        private set
 
-    private val _membersData =
-        MutableStateFlow<List<Triple<String, String, DocumentReference>>>(emptyList())
-    val membersData: StateFlow<List<Triple<String, String, DocumentReference>>> = _membersData
+    var membersData = mutableStateOf<List<Triple<String, String, DocumentReference>>>(emptyList())
+        private set
 
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    var isLoading = mutableStateOf(false)
+        private set
+
+    var isSaved = mutableStateOf(false)
+        private set
+
+    var errorMessage = mutableStateOf<String?>(null)
+        private set
 
     private var groupId: String? = null
+    private var groupListener: ListenerRegistration? = null
 
     fun fetchGroup(groupId: String) {
         this.groupId = groupId
-        _isLoading.value = true
+        isLoading.value = true
+        errorMessage.value = null
 
-        viewModelScope.launch {
-            try {
-                val grp = repo.fetchGroup(groupId)
-                _group.value = grp
-                _membersData.value = grp?.let { repo.fetchMembers(it) } ?: emptyList()
-            } catch (e: Exception) {
-                Log.e("GroupSettingsVM", "Error fetching group", e)
-            } finally {
-                _isLoading.value = false
+        // Remove previous listener if exists
+        groupListener?.remove()
+
+        // Listen for real-time updates
+        groupListener = repo.listenToGroup(groupId) { updatedGroup ->
+            group.value = updatedGroup
+            viewModelScope.launch {
+                membersData.value = updatedGroup?.let { repo.fetchMembers(it) } ?: emptyList()
+            }
+            isLoading.value = false
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        groupListener?.remove()
+    }
+
+    fun updateGroupName(newName: String) {
+        groupId?.let { id ->
+            viewModelScope.launch {
+                runCatching { repo.updateGroupName(id, newName) }
+                    .onSuccess { group.value = group.value?.copy(name = newName); isSaved.value = true }
+                    .onFailure { e -> errorMessage.value = e.message ?: "Failed to update name." }
             }
         }
     }
 
-    fun updateGroupName(newName: String) = groupId?.let {
-        viewModelScope.launch { repo.updateGroupName(it, newName) }
+    fun updateGroupDescription(newDesc: String) {
+        groupId?.let { id ->
+            viewModelScope.launch {
+                runCatching { repo.updateGroupDescription(id, newDesc) }
+                    .onSuccess { group.value = group.value?.copy(description = newDesc); isSaved.value = true }
+                    .onFailure { e -> errorMessage.value = e.message ?: "Failed to update description." }
+            }
+        }
     }
 
-    fun updateGroupDescription(newDesc: String) = groupId?.let {
-        viewModelScope.launch { repo.updateGroupDescription(it, newDesc) }
+    fun addMemberByEmail(email: String) {
+        groupId?.let { id ->
+            viewModelScope.launch {
+                runCatching { repo.addMemberByEmail(id, email) }
+                    .onFailure { e -> errorMessage.value = e.message ?: "Failed to add member." }
+            }
+        }
     }
 
-    fun addMemberByEmail(email: String) = groupId?.let {
-        viewModelScope.launch { repo.addMemberByEmail(it, email) }
+    fun removeMember(memberRef: DocumentReference) {
+        groupId?.let { id ->
+            viewModelScope.launch {
+                runCatching { repo.removeMember(id, memberRef) }
+                    .onFailure { e -> errorMessage.value = e.message ?: "Failed to remove member." }
+            }
+        }
     }
 
-    fun removeMember(memberRef: DocumentReference) = groupId?.let {
-        viewModelScope.launch { repo.removeMember(it, memberRef) }
-    }
-
-    fun leaveGroup() = groupId?.let {
-        viewModelScope.launch { repo.leaveGroup(it) }
+    fun leaveGroup() {
+        groupId?.let { id ->
+            viewModelScope.launch {
+                runCatching { repo.leaveGroup(id) }
+                    .onSuccess { group.value = null; membersData.value = emptyList(); isSaved.value = true }
+                    .onFailure { e -> errorMessage.value = e.message ?: "Failed to leave group." }
+            }
+        }
     }
 
     fun isCurrentUser(memberRef: DocumentReference) = repo.isCurrentUser(memberRef)
+    fun clearSavedFlag() { isSaved.value = false }
 }

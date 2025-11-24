@@ -72,14 +72,6 @@ fun FinalizedBillScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    FilledTonalButton(
-                        onClick = { viewModel.reopenBill(groupId) { onBack() } },
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text("Reopen")
-                    }
-                }
             )
         }
     ) { padding ->
@@ -241,106 +233,106 @@ private fun SummaryRow(label: String, value: String) {
 }
 
 
-    @Composable
-    fun SlideToPay(
-        isPaid: Boolean,
-        failed: Boolean = false,
-        onSlideComplete: () -> Unit
-    ) {
-        var offsetX by remember { mutableStateOf(0f) }
-        var isSliding by remember { mutableStateOf(false) }
+@Composable
+fun SlideToPay(
+    isPaid: Boolean,
+    failed: Boolean = false,
+    onSlideComplete: () -> Unit
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    var isSliding by remember { mutableStateOf(false) }
 
-        LaunchedEffect(failed) {
-            if (failed) {
-                offsetX = 0f
-            }
-        }
-
-        LaunchedEffect(isPaid) {
-            if (!isPaid && !failed && !isSliding) {
-                offsetX = 0f
-            }
-        }
-
-        val sliderHeight = 40.dp
-        val thumbSize = 40.dp
-        val corner = RoundedCornerShape(20.dp)
-
-        val bgColor = if (failed) Color(0xFFFFEBEE) else MaterialTheme.colorScheme.surfaceVariant
-        val activeColor = if (failed) Color(0xFFD32F2F) else Color(0xFF58A85C)
-        val thumbColor = if (failed) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
-
-        val textColor = MaterialTheme.colorScheme.onSurface
-        val completedTextColor = Color.White
-
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .height(sliderHeight)
-                .clip(corner)
-                .background(bgColor)
-        ) {
-            val maxWidthPx =
-                constraints.maxWidth.toFloat() - with(LocalDensity.current) { thumbSize.toPx() }
-
-            val currentOffset = if (isPaid) maxWidthPx else offsetX
-
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(with(LocalDensity.current) { (currentOffset + thumbSize.toPx()).toDp() })
-                    .clip(corner)
-                    .background(activeColor)
-            )
-
-            Text(
-                text = when {
-                    failed -> "Try again"
-                    isPaid -> "Payment completed ✔"
-                    else -> "Slide to pay"
-                },
-                modifier = Modifier.align(Alignment.Center),
-                color = when {
-                    failed -> Color(0xFFD32F2F)
-                    isPaid -> completedTextColor
-                    else -> textColor
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-
-            Box(
-                modifier = Modifier
-                    .size(thumbSize)
-                    .offset {
-                        IntOffset(
-                            currentOffset.roundToInt(),
-                            ((sliderHeight - thumbSize) / 2).roundToPx()
-                        )
-                    }
-                    .clip(CircleShape)
-                    .background(thumbColor)
-                    .pointerInput(isPaid, failed) {
-                        if (!isPaid) {
-                            detectDragGestures(
-                                onDragStart = { isSliding = true },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    offsetX = (offsetX + dragAmount.x)
-                                        .coerceIn(0f, maxWidthPx)
-                                },
-                                onDragEnd = {
-                                    isSliding = false
-                                    if (offsetX >= maxWidthPx * 0.95f) {
-                                        offsetX = maxWidthPx
-                                        onSlideComplete()
-                                    } else {
-                                        offsetX = 0f
-                                    }
-                                }
-                            )
-                        }
-                    }
-            )
+    LaunchedEffect(failed) {
+        if (failed) {
+            offsetX = 0f
         }
     }
+
+    LaunchedEffect(isPaid) {
+        if (!isPaid && !failed && !isSliding) {
+            offsetX = 0f
+        }
+    }
+
+    val sliderHeight = 40.dp
+    val thumbSize = 40.dp
+    val corner = RoundedCornerShape(20.dp)
+
+    val bgColor = if (failed) Color(0xFFFFEBEE) else MaterialTheme.colorScheme.surfaceVariant
+    val activeColor = if (failed) Color(0xFFD32F2F) else Color(0xFF58A85C)
+    val thumbColor = if (failed) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
+
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val completedTextColor = Color.White
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth(0.7f)
+            .height(sliderHeight)
+            .clip(corner)
+            .background(bgColor)
+    ) {
+        val maxWidthPx =
+            constraints.maxWidth.toFloat() - with(LocalDensity.current) { thumbSize.toPx() }
+
+        val currentOffset = if (isPaid) maxWidthPx else offsetX
+
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(with(LocalDensity.current) { (currentOffset + thumbSize.toPx()).toDp() })
+                .clip(corner)
+                .background(activeColor)
+        )
+
+        Text(
+            text = when {
+                failed -> "Try again"
+                isPaid -> "Payment completed ✔"
+                else -> "Slide to pay"
+            },
+            modifier = Modifier.align(Alignment.Center),
+            color = when {
+                failed -> Color(0xFFD32F2F)
+                isPaid -> completedTextColor
+                else -> textColor
+            },
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+
+        Box(
+            modifier = Modifier
+                .size(thumbSize)
+                .offset {
+                    IntOffset(
+                        currentOffset.roundToInt(),
+                        ((sliderHeight - thumbSize) / 2).roundToPx()
+                    )
+                }
+                .clip(CircleShape)
+                .background(thumbColor)
+                .pointerInput(isPaid, failed) {
+                    if (!isPaid) {
+                        detectDragGestures(
+                            onDragStart = { isSliding = true },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetX = (offsetX + dragAmount.x)
+                                    .coerceIn(0f, maxWidthPx)
+                            },
+                            onDragEnd = {
+                                isSliding = false
+                                if (offsetX >= maxWidthPx * 0.95f) {
+                                    offsetX = maxWidthPx
+                                    onSlideComplete()
+                                } else {
+                                    offsetX = 0f
+                                }
+                            }
+                        )
+                    }
+                }
+        )
+    }
+}

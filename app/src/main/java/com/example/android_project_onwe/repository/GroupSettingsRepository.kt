@@ -30,10 +30,8 @@ class GroupSettingsRepository {
                 val firstName = snapshot.getString("firstName") ?: ""
                 val lastName = snapshot.getString("lastName") ?: ""
                 val email = snapshot.getString("email") ?: memberRef.id
-
                 val displayName = if (firstName.isNotEmpty() || lastName.isNotEmpty())
                     "$firstName $lastName".trim() else email
-
                 fetchedMembers.add(Triple(displayName, email, memberRef))
             } catch (_: Exception) {
                 // ignore individual member fetch errors
@@ -53,10 +51,8 @@ class GroupSettingsRepository {
     suspend fun addMemberByEmail(groupId: String, email: String) {
         val query = db.collection("user").whereEqualTo("email", email).get().await()
         val userRef = query.documents.firstOrNull()?.reference ?: return
-
         val groupSnapshot = db.collection("group").document(groupId).get().await()
         val group = groupSnapshot.toObject(Group::class.java) ?: return
-
         val updatedMembers = group.members.toMutableList()
         if (!updatedMembers.contains(userRef)) updatedMembers.add(userRef)
         db.collection("group").document(groupId).update("members", updatedMembers).await()
@@ -65,7 +61,6 @@ class GroupSettingsRepository {
     suspend fun removeMember(groupId: String, memberRef: DocumentReference) {
         val groupSnapshot = db.collection("group").document(groupId).get().await()
         val group = groupSnapshot.toObject(Group::class.java) ?: return
-
         val updatedMembers = group.members.toMutableList()
         updatedMembers.remove(memberRef)
         db.collection("group").document(groupId).update("members", updatedMembers).await()
@@ -76,4 +71,14 @@ class GroupSettingsRepository {
     }
 
     fun isCurrentUser(memberRef: DocumentReference): Boolean = memberRef == getCurrentUserRef()
+
+    // Listen to real-time updates
+    fun listenToGroup(groupId: String, onUpdate: (Group?) -> Unit) =
+        db.collection("group").document(groupId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                if (snapshot != null && snapshot.exists()) {
+                    onUpdate(snapshot.toObject(Group::class.java))
+                }
+            }
 }

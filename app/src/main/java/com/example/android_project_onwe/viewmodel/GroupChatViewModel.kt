@@ -72,6 +72,12 @@ class GroupChatViewModel(
         }
     }
 
+    fun listenForBillFinalized(groupId: String) {
+        expenseRepo.listenForBillFinalized(groupId) { finalized ->
+            _billFinalized.value = finalized
+        }
+    }
+
     fun listenForPayments(groupId: String) {
         paymentRepo.listenForPayments(groupId) { p ->
             _payments.value = p.sortedBy { it.timestamp }

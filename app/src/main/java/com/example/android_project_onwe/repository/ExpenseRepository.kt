@@ -30,6 +30,18 @@ class ExpenseRepository {
             }
     }
 
+    fun listenForBillFinalized(groupId: String, onChange: (Boolean) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("group")
+            .document(groupId)
+            .addSnapshotListener { snapshot, _ ->
+                val finalized = snapshot?.getBoolean("billFinalized") ?: false
+                onChange(finalized)
+            }
+    }
+
+
+
     fun addExpense(groupId: String, amount: Double, description: String) {
         val currentUserId = getCurrentUserId() ?: return
 
