@@ -51,6 +51,7 @@ fun GroupSettingsScreen(
 
     var editableName by remember { mutableStateOf("") }
     var editableDescription by remember { mutableStateOf("") }
+    var isEdited by remember { mutableStateOf(false) }
 
     // Fetch group data
     LaunchedEffect(groupId) {
@@ -75,8 +76,8 @@ fun GroupSettingsScreen(
         )
     }
 
-    val canSave by remember(nameError, descriptionError, hasChanges) {
-        mutableStateOf(hasChanges && !nameError && !descriptionError)
+    val canSave by remember(nameError, descriptionError, hasChanges, isEdited) {
+        mutableStateOf(isEdited && hasChanges && !nameError && !descriptionError)
     }
 
     Scaffold(
@@ -136,25 +137,26 @@ fun GroupSettingsScreen(
                     // Editable fields
                     OutlinedTextField(
                         value = editableName,
-                        onValueChange = { editableName = it },
+                        onValueChange = {
+                            editableName = it
+                            isEdited = true
+                        },
                         label = { Text("Group Name") },
                         modifier = Modifier.fillMaxWidth(),
                         isError = nameError
                     )
-                    if (nameError) Text(
-                        "Group name cannot be empty",
-                        color = MaterialTheme.colorScheme.error
-                    )
-
-                    Spacer(Modifier.height(8.dp))
 
                     OutlinedTextField(
                         value = editableDescription,
-                        onValueChange = { editableDescription = it },
+                        onValueChange = {
+                            editableDescription = it
+                            isEdited = true
+                        },
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth(),
                         isError = descriptionError
                     )
+
                     if (descriptionError) Text(
                         "Description cannot be empty",
                         color = MaterialTheme.colorScheme.error
@@ -203,8 +205,7 @@ fun GroupSettingsScreen(
                         Button(
                             onClick = {
                                 group?.let {
-                                    viewModel.updateGroupName(editableName)
-                                    viewModel.updateGroupDescription(editableDescription)
+                                    viewModel.saveGroupChanges(editableName,editableDescription)
                                 }
                             },
                             modifier = Modifier

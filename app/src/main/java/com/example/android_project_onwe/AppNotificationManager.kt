@@ -18,6 +18,7 @@ class AppNotificationManager(private val context: Context) {
     private val notificationRepo = NotificationRepository(context)
 
     private var isGroupSnapshotFirst = true
+    private var isReminderSnapshotFirst = true
     private val expensesFirstMap = mutableMapOf<String, Boolean>()
     private var currentOpenGroupId: String? = null
 
@@ -137,6 +138,12 @@ class AppNotificationManager(private val context: Context) {
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null) return@addSnapshotListener
 
+                // Skip first snapshot (existing reminders)
+                if (isReminderSnapshotFirst) {
+                    isReminderSnapshotFirst = false
+                    return@addSnapshotListener
+                }
+
                 snapshot.documentChanges
                     .filter { it.type == DocumentChange.Type.ADDED }
                     .forEach { change ->
@@ -152,6 +159,7 @@ class AppNotificationManager(private val context: Context) {
                     }
             }
     }
+
 
 
     fun sendPaymentRemindersToFirestore(

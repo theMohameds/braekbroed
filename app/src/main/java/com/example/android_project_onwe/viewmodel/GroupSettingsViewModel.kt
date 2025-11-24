@@ -55,11 +55,40 @@ class GroupSettingsViewModel : ViewModel() {
         groupListener?.remove()
     }
 
+    fun saveGroupChanges(newName: String, newDesc: String) {
+        val id = groupId ?: return
+
+        viewModelScope.launch {
+            isLoading.value = true
+            errorMessage.value = null
+
+            try {
+                // Run both updates sequentially
+                runCatching { repo.updateGroupName(id, newName) }.onFailure { e ->
+                    errorMessage.value = e.message ?: "Failed to update name."
+                    return@launch
+                }
+
+                runCatching { repo.updateGroupDescription(id, newDesc) }.onFailure { e ->
+                    errorMessage.value = e.message ?: "Failed to update description."
+                    return@launch
+                }
+
+                // Update local state
+                group.value = group.value?.copy(name = newName, description = newDesc)
+                isSaved.value = true // triggers toast once
+            } finally {
+                isLoading.value = false
+            }
+        }
+    }
+
+
     fun updateGroupName(newName: String) {
         groupId?.let { id ->
             viewModelScope.launch {
                 runCatching { repo.updateGroupName(id, newName) }
-                    .onSuccess { group.value = group.value?.copy(name = newName); isSaved.value = true }
+                    .onSuccess { group.value = group.value?.copy(name = newName);}
                     .onFailure { e -> errorMessage.value = e.message ?: "Failed to update name." }
             }
         }
@@ -69,7 +98,7 @@ class GroupSettingsViewModel : ViewModel() {
         groupId?.let { id ->
             viewModelScope.launch {
                 runCatching { repo.updateGroupDescription(id, newDesc) }
-                    .onSuccess { group.value = group.value?.copy(description = newDesc); isSaved.value = true }
+                    .onSuccess { group.value = group.value?.copy(description = newDesc);}
                     .onFailure { e -> errorMessage.value = e.message ?: "Failed to update description." }
             }
         }
