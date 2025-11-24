@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.*
+import com.example.android_project_onwe.AppNotificationManager
 import com.example.android_project_onwe.model.Expense
 import com.example.android_project_onwe.model.Payment
 import com.example.android_project_onwe.model.PendingOperation
@@ -224,8 +225,24 @@ class FinalizedBillViewModel(
         }
     }
 
-    fun sendPaymentReminder(toUserId: String, amount: Double) {
-        // todo
+    fun sendPaymentReminders(
+        groupId: String,
+        groupName: String,
+        members: Map<String, String>,
+        expenses: List<Expense>,
+        notificationManager: AppNotificationManager
+    ) {
+        // Convert member userIds → DocumentReference
+        val memberRefs = members.keys.map { userId ->
+            FirebaseFirestore.getInstance().collection("user").document(userId)
+        }
+
+        notificationManager.sendPaymentRemindersToFirestore(
+            groupId = groupId,
+            groupName = groupName,
+            members = memberRefs,
+            expenses = expenses
+        )
     }
 
     override fun onCleared() {

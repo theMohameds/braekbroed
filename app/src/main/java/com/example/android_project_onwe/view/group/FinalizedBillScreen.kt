@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.android_project_onwe.AppNotificationManager
 import com.example.android_project_onwe.viewmodel.FinalizedBillViewModel
 import com.example.android_project_onwe.model.Expense
 import com.google.firebase.auth.FirebaseAuth
@@ -33,7 +34,8 @@ import kotlin.math.roundToInt
 fun FinalizedBillScreen(
     groupId: String,
     onBack: () -> Unit,
-    viewModel: FinalizedBillViewModel = viewModel()
+    viewModel: FinalizedBillViewModel = viewModel(),
+    notificationManager: AppNotificationManager,
 ) {
     LaunchedEffect(groupId) { viewModel.start(groupId) }
 
@@ -202,10 +204,14 @@ fun FinalizedBillScreen(
                             } else {
                                 IconButton(
                                     onClick = {
-                                        viewModel.sendPaymentReminder(
-                                            toUserId = p.fromUser?.id ?: "",
-                                            amount = p.amount
+                                        viewModel.sendPaymentReminders(
+                                            groupId = groupId,
+                                            groupName = groupName,
+                                            members = members,
+                                            expenses = expenses,
+                                            notificationManager = notificationManager
                                         )
+
                                     }
                                 ) {
                                     Icon(

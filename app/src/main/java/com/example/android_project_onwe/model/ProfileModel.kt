@@ -4,6 +4,6 @@ data class ProfileModel(
     var firstName: String = "",
     var lastName: String = "",
     var phone: String = "",
-    var address: String = "",
+    var email: String = "",
     var notificationsEnabled: Boolean = false
 )

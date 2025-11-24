@@ -17,8 +17,10 @@ fun BottomNavigationBar(
     onItemSelected: (String) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color.White
-    ) {
+        containerColor = MaterialTheme.colorScheme.surface, // slightly different from background
+        tonalElevation = 2.dp
+    )
+    {
 
         // Add tab
         NavigationBarItem(
@@ -27,9 +29,9 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(24.dp)) },
             label = { Text("Add") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
+                selectedIconColor = MaterialTheme.colorScheme.onBackground,
                 unselectedIconColor = Color.Gray,
-                selectedTextColor = Color.Black,
+                selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
                 indicatorColor = Color.Transparent
             )
@@ -42,9 +44,9 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(24.dp)) },
             label = { Text("Home") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
+                selectedIconColor = MaterialTheme.colorScheme.onBackground,
                 unselectedIconColor = Color.Gray,
-                selectedTextColor = Color.Black,
+                selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
                 indicatorColor = Color.Transparent
             )
@@ -57,9 +59,9 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Person, contentDescription = "Profile", modifier = Modifier.size(24.dp)) },
             label = { Text("Profile") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
+                selectedIconColor = MaterialTheme.colorScheme.onBackground,
                 unselectedIconColor = Color.Gray,
-                selectedTextColor = Color.Black,
+                selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
                 indicatorColor = Color.Transparent
             )

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,9 +37,6 @@ fun GroupSettingsScreen(
 ) {
     val viewModel: GroupSettingsViewModel = viewModel()
 
-    // Load group
-    LaunchedEffect(groupId) { viewModel.fetchGroup(groupId) }
-
     val group by viewModel.group.collectAsState()
     val members by viewModel.membersData.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -50,11 +48,13 @@ fun GroupSettingsScreen(
     var newMemberEmail by remember { mutableStateOf("") }
     var addMemberError by remember { mutableStateOf<String?>(null) }
 
-    // Local state for editable fields
     var editableName by remember { mutableStateOf("") }
     var editableDescription by remember { mutableStateOf("") }
 
-    // Update local state when group loads
+    LaunchedEffect(group) {
+        viewModel.fetchGroup(groupId)
+    }
+
     LaunchedEffect(group) {
         group?.let {
             editableName = it.name
@@ -82,7 +82,8 @@ fun GroupSettingsScreen(
                             text = "Group Settings",
                             style = MaterialTheme.typography.titleLarge,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = FontWeight.Bold,
                         )
 
                     }
@@ -95,7 +96,10 @@ fun GroupSettingsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                modifier = Modifier.shadow(4.dp)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                ),
+                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             )
         }
     ) { padding ->

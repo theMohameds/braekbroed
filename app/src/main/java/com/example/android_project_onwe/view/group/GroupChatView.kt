@@ -12,8 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,15 +51,17 @@ fun GroupChatView(
     val expenses by viewModel.expenses.collectAsState()
     val membersMap by viewModel.membersMap.collectAsState()
 
-    val merged = remember(messages, expenses) {
-        (messages + expenses)
-            .sortedBy {
+    // Optimized merged list
+    val merged by remember(messages, expenses) {
+        derivedStateOf {
+            (messages + expenses).sortedBy {
                 when (it) {
                     is Message -> it.timestamp
                     is Expense -> it.timestamp
                     else -> Long.MAX_VALUE
                 }
             }
+        }
     }
 
     var input by remember { mutableStateOf("") }
@@ -68,8 +70,8 @@ fun GroupChatView(
     val focus = LocalFocusManager.current
 
     LaunchedEffect(merged.size) {
-        if (merged.isNotEmpty()) {
-            scope.launch { listState.animateScrollToItem(merged.size - 1) }
+        if (merged.isNotEmpty() && listState.firstVisibleItemIndex >= merged.size - 2) {
+            listState.scrollToItem(merged.size - 1)
         }
     }
 
@@ -81,7 +83,8 @@ fun GroupChatView(
                         groupName,
                         style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold,
                     )
                 },
                 navigationIcon = {
@@ -94,12 +97,9 @@ fun GroupChatView(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background, // same as background
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
                 ),
-                modifier = Modifier.shadow(
-                    elevation = 4.dp // subtle floating effect
-                )
+                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             )
         },
     ) { paddingValues ->
@@ -107,9 +107,8 @@ fun GroupChatView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)  // <--- THIS applies topBar & bottomBar padding
+                .padding(paddingValues)
                 .padding(horizontal = 16.dp)
-
         ) {
             Spacer(Modifier.height(10.dp))
 
@@ -123,9 +122,7 @@ fun GroupChatView(
                         onNavigate(Screen.GroupExpenses(groupId))
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Text("Expenses")
-                }
+                ) { Text("Expenses") }
 
                 FilledTonalButton(
                     onClick = {
@@ -133,20 +130,28 @@ fun GroupChatView(
                         onNavigate(Screen.GroupSettings(groupId))
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Text("Group settings")
-                }
+                ) { Text("Group settings") }
             }
 
+            Spacer(Modifier.height(10.dp))
 
             LazyColumn(
                 state = listState,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 10.dp,),
+                    .padding(horizontal = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(merged) { item ->
+                items(
+                    items = merged,
+                    key = {
+                        when (it) {
+                            is Message -> "msg-${it.id}"
+                            is Expense -> "exp-${it.id}"
+                            else -> it.hashCode()
+                        }
+                    }
+                ) { item ->
                     when (item) {
                         is Message -> {
                             val isMe = item.senderId == currentUserId
@@ -189,7 +194,7 @@ fun GroupChatView(
                                 viewModel.sendMessage(groupId, input)
                                 input = ""
                                 focus.clearFocus()
-                                scope.launch { listState.animateScrollToItem(merged.size) }
+                                scope.launch { listState.scrollToItem(merged.size - 1) }
                             }
                         }
                     )
@@ -203,16 +208,12 @@ fun GroupChatView(
                             viewModel.sendMessage(groupId, input)
                             input = ""
                             focus.clearFocus()
-                            scope.launch { listState.animateScrollToItem(merged.size) }
+                            scope.launch { listState.scrollToItem(merged.size - 1) }
                         }
                     },
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text("Send")
-                }
+                ) { Text("Send") }
             }
-
         }
     }
 }
-

@@ -15,6 +15,8 @@ import com.example.android_project_onwe.view.ProfileScreen
 import com.example.android_project_onwe.view.group.FinalizedBillScreen
 import com.example.android_project_onwe.view.group.GroupExpensesScreen
 import com.example.android_project_onwe.view.group.GroupSettingsScreen
+import com.example.android_project_onwe.viewmodel.ProfileViewModel
+import com.example.android_project_onwe.view.startUpScreens.LoginScreen
 
 @Composable
 fun AppNavigation(notificationManager: AppNotificationManager) {
@@ -30,6 +32,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
         is FinalizedBill -> ""
         is GroupExpenses -> ""
         is GroupSettings -> ""
+        is login -> ""
     }
 
     Scaffold(
@@ -56,7 +59,6 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
             is Home -> {
                 HomeScreen(
                     viewModel = groupViewModel,
-                    modifier = Modifier.padding(paddingValues),
                     onGroupClick = { group ->
                         currentScreenState = GroupChat(group.id)
                     }
@@ -66,7 +68,7 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
             is CreateGroup -> {
                 CreateGroupScreen(
                     viewModel = groupViewModel,
-                    onGroupCreated = { currentScreenState = Home }
+                    onNavigate = { screen -> currentScreenState = screen },
                 )
             }
 
@@ -88,15 +90,22 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                     onBack = {
                         notificationManager.setCurrentOpenGroup(screen.groupId)
                         currentScreenState = GroupExpenses(screen.groupId)
-                    }
+                    },
+                    notificationManager = notificationManager,
                 )
             }
 
             is Profile -> {
-                ProfileScreen(modifier = Modifier.padding(paddingValues))
+                val profileViewModel: ProfileViewModel = viewModel()
+
+                ProfileScreen(
+                    modifier = Modifier.padding(paddingValues),
+                    viewModel = profileViewModel,
+                    onNavigate = { screen -> currentScreenState = screen },
+                )
             }
 
-            is GroupExpenses -> {
+            is Screen.GroupExpenses -> {
                 GroupExpensesScreen(
                     groupId = screen.groupId,
                     onBack = {
@@ -122,6 +131,10 @@ fun AppNavigation(notificationManager: AppNotificationManager) {
                     onNavigate = { screen -> currentScreenState = screen },
                     )
             }
+
+            login -> {
+                LoginScreen {}
+            }
         }
     }
 }
@@ -135,4 +148,5 @@ sealed class Screen {
     object Profile : Screen()
     data class GroupExpenses(val groupId: String) : Screen()
     data class GroupSettings(val groupId: String) : Screen()
+    object login : Screen()
 }

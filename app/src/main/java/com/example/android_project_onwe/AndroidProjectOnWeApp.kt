@@ -9,6 +9,7 @@ import com.example.android_project_onwe.viewmodel.AuthViewModel
 @Composable
 fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
 
+
     val isUserLoggedIn by authViewModel.isLoggedIn.collectAsState(initial = false)
     var currentScreen by remember { mutableStateOf("login") }
     val context = LocalContext.current
@@ -37,6 +38,8 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
             notificationManager = notificationManager
         )
     }
+
+
 }
 
 

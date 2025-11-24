@@ -20,91 +20,128 @@ class AppNotificationManager(private val context: Context) {
     private var isGroupSnapshotFirst = true
     private val expensesFirstMap = mutableMapOf<String, Boolean>()
     private var currentOpenGroupId: String? = null
+    private var notificationsEnabled: Boolean? = null
+
 
     fun setCurrentOpenGroup(groupId: String?) {
         currentOpenGroupId = groupId
     }
     fun start() {
-        val currentUserId = auth.currentUser?.uid ?: return
-        val currentUserRef = db.collection("user").document(currentUserId)
+        loadUserNotificationsEnabled { enabled ->
+            val currentUserId = auth.currentUser?.uid ?: return@loadUserNotificationsEnabled
+            val currentUserRef = db.collection("user").document(currentUserId)
 
-        listenForGroups(currentUserId, currentUserRef)
-        listenForExistingGroupsExpenses(currentUserId, currentUserRef)
-        listenForReminderEvents(currentUserId);
+            // Always start listeners — they do not send notifications unless enabled
+            listenForGroups(currentUserId, currentUserRef)
+            listenForExistingGroupsExpenses(currentUserId, currentUserRef)
+            listenForReminderEvents(currentUserId)
+        }
     }
 
+    fun loadUserNotificationsEnabled(
+        userId: String? = auth.currentUser?.uid,
+        onLoaded: (Boolean?) -> Unit
+    ) {
+        val uid = userId
+        if (uid == null) {
+            onLoaded(null)
+            return
+        }
+
+        db.collection("user")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { snap ->
+                notificationsEnabled = snap.getBoolean("notificationsEnabled")
+                onLoaded(notificationsEnabled)
+            }
+            .addOnFailureListener {
+                notificationsEnabled = null
+                onLoaded(null)
+            }
+    }
+
+
+
     private fun listenForGroups(currentUserId: String, currentUserRef: Any) {
-        db.collection("group")
-            .whereArrayContains("members", currentUserRef)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
 
-                snapshot.documentChanges
-                    .filter { it.type == DocumentChange.Type.ADDED }
-                    .forEach { docChange ->
-                        val groupDoc = docChange.document
-                        val groupId = groupDoc.id
-                        val group = groupDoc.toObject(Group::class.java)
-                        val groupName = group?.name ?: "Group"
-                        val creatorId = group?.createdBy?.id
+            db.collection("group")
+                .whereArrayContains("members", currentUserRef)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) return@addSnapshotListener
 
-                        // Notify for new groups (skip first snapshot)
-                        if (!isGroupSnapshotFirst && creatorId != null && creatorId != currentUserId) {
-                            notificationRepo.sendNotification(
-                                title = "You've been added to a group",
-                                content = groupName
-                            )
+                    snapshot.documentChanges
+                        .filter { it.type == DocumentChange.Type.ADDED }
+                        .forEach { docChange ->
+                            val groupDoc = docChange.document
+                            val groupId = groupDoc.id
+                            val group = groupDoc.toObject(Group::class.java)
+                            val groupName = group?.name ?: "Group"
+                            val creatorId = group?.createdBy?.id
+
+                            // Notify for new groups (skip first snapshot)
+                            if (!isGroupSnapshotFirst && creatorId != null && creatorId != currentUserId) {
+                                notificationRepo.sendNotification(
+                                    title = "You've been added to a group",
+                                    content = groupName
+                                )
+                            }
+
+                            listenForGroupExpenses(groupId, groupName, currentUserId)
                         }
 
-                        listenForGroupExpenses(groupId, groupName, currentUserId)
-                    }
+                    isGroupSnapshotFirst = false
+                }
 
-                isGroupSnapshotFirst = false
-            }
+
     }
 
     private fun listenForExistingGroupsExpenses(currentUserId: String, currentUserRef: Any) {
-        db.collection("group")
-            .whereArrayContains("members", currentUserRef)
-            .get()
-            .addOnSuccessListener { groupSnap ->
-                groupSnap.documents.forEach { groupDoc ->
-                    val groupId = groupDoc.id
-                    val groupName = groupDoc.getString("name") ?: "Group"
-                    listenForGroupExpenses(groupId, groupName, currentUserId)
+
+            db.collection("group")
+                .whereArrayContains("members", currentUserRef)
+                .get()
+                .addOnSuccessListener { groupSnap ->
+                    groupSnap.documents.forEach { groupDoc ->
+                        val groupId = groupDoc.id
+                        val groupName = groupDoc.getString("name") ?: "Group"
+                        listenForGroupExpenses(groupId, groupName, currentUserId)
+                    }
                 }
-            }
+
     }
 
     private fun listenForGroupExpenses(groupId: String, groupName: String, currentUserId: String) {
-        expensesFirstMap[groupId] = true
 
-        db.collection("group")
-            .document(groupId)
-            .collection("expenses")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
+            expensesFirstMap[groupId] = true
 
-                val isFirstSnapshot = expensesFirstMap[groupId] ?: true
-                if (isFirstSnapshot) {
-                    expensesFirstMap[groupId] = false
-                    return@addSnapshotListener
+            db.collection("group")
+                .document(groupId)
+                .collection("expenses")
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) return@addSnapshotListener
+
+                    val isFirstSnapshot = expensesFirstMap[groupId] ?: true
+                    if (isFirstSnapshot) {
+                        expensesFirstMap[groupId] = false
+                        return@addSnapshotListener
+                    }
+
+                    snapshot.documentChanges
+                        .filter { it.type == DocumentChange.Type.ADDED }
+                        .forEach { change ->
+                            val expense = change.document.toObject(Expense::class.java)
+                            if (expense.payerId != currentUserId &&
+                                groupId != currentOpenGroupId  // <-- skip if group is open
+                            ) {
+                                notificationRepo.sendNotification(
+                                    title = "New expense in $groupName",
+                                    content = "${expense.description}: ${expense.amount} kr"
+                                )
+                            }
+                        }
                 }
 
-                snapshot.documentChanges
-                    .filter { it.type == DocumentChange.Type.ADDED }
-                    .forEach { change ->
-                        val expense = change.document.toObject(Expense::class.java)
-                        if (expense.payerId != currentUserId &&
-                            groupId != currentOpenGroupId  // <-- skip if group is open
-                        ) {
-                            notificationRepo.sendNotification(
-                                title = "New expense in $groupName",
-                                content = "${expense.description}: ${expense.amount} kr"
-                            )
-                        }
-                    }
-            }
     }
 
 
@@ -157,27 +194,28 @@ class AppNotificationManager(private val context: Context) {
 
 
     private fun listenForReminderEvents(currentUserId: String) {
-        db.collectionGroup("reminders")
-            .whereEqualTo("toUserId", currentUserId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    return@addSnapshotListener
-                }
-                if (snapshot == null) {
-                    return@addSnapshotListener
-                }
-                snapshot.documentChanges
-                    .filter { it.type == DocumentChange.Type.ADDED }
-                    .forEach { change ->
-                        val amount = change.document.getDouble("amount") ?: return@forEach
-                        val groupName = change.document.getString("groupName") ?: "Group"
 
-                        notificationRepo.sendNotification(
-                            title = "You owe in $groupName",
-                            content = "You owe %.2f kr".format(amount)
-                        )
+            db.collectionGroup("reminders")
+                .whereEqualTo("toUserId", currentUserId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        return@addSnapshotListener
                     }
-            }
+                    if (snapshot == null) {
+                        return@addSnapshotListener
+                    }
+                    snapshot.documentChanges
+                        .filter { it.type == DocumentChange.Type.ADDED }
+                        .forEach { change ->
+                            val amount = change.document.getDouble("amount") ?: return@forEach
+                            val groupName = change.document.getString("groupName") ?: "Group"
+
+                            notificationRepo.sendNotification(
+                                title = "You owe in $groupName",
+                                content = "You owe %.2f kr".format(amount)
+                            )
+                        }
+                }
 
     }
 

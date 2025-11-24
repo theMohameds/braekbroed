@@ -10,13 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 class AuthViewModel : ViewModel() {
 
 
-    //  DEV MODE, ALWAYS LOG IN AS TEST USER
-    private val DEV_MODE = false
-    private val DEV_USER_ID = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
-
-    val currentUserId: String?
-        get() = if (DEV_MODE) DEV_USER_ID else FirebaseAuth.getInstance().currentUser?.uid
-
     private val _authEvent = MutableStateFlow("")
     val authEvent: StateFlow<String> = _authEvent
     private val _isLoggedIn = MutableStateFlow(false)
@@ -25,10 +18,7 @@ class AuthViewModel : ViewModel() {
 
     fun signUp(email: String, password: String, firstName: String, lastName: String) {
         val normalizedEmail = email.trim().lowercase()
-        if (DEV_MODE) {
-            _authEvent.value = "Sign up disabled in DEV MODE"
-            return
-        }
+
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(normalizedEmail).matches()) {
             _authEvent.value = "Invalid email format"
             return
@@ -77,12 +67,6 @@ class AuthViewModel : ViewModel() {
     }
 
     fun login(email: String, password: String) {
-
-        if (DEV_MODE) {
-            _isLoggedIn.value = true
-            _authEvent.value = "DEV MODE LOGIN SUCCESSFUL"
-            return
-        }
 
         if (email.isBlank() && password.isBlank()) {
             _authEvent.value = "Please enter your email & password"

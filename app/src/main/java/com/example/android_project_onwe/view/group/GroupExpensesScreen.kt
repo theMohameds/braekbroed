@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -58,7 +59,8 @@ fun GroupExpensesScreen(
                         groupName + " Expenses",
                         style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold,
                     )
                 },
                 navigationIcon = {
@@ -71,12 +73,9 @@ fun GroupExpensesScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background, // same as background
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
                 ),
-                modifier = Modifier.shadow(
-                    elevation = 4.dp // subtle floating effect
-                )
+                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             )
         }
 

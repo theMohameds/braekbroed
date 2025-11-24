@@ -26,13 +26,6 @@ class GroupChatViewModel(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : ViewModel() {
 
-    // DEV MODE
-    private val DEV_MODE: Boolean = false
-    private val DEV_USER_ID: String = "b1aGkqyYBqR9GSIEB1FnbjBMrWt1"
-
-    private fun getUserId(): String? =
-        if (DEV_MODE) DEV_USER_ID else FirebaseAuth.getInstance().currentUser?.uid
-
     private val _groupName = MutableStateFlow<String>("")
     val groupName: StateFlow<String> = _groupName
 
@@ -290,23 +283,4 @@ class GroupChatViewModel(
         }
     }
 
-    fun sendPaymentReminders(
-        groupId: String,
-        groupName: String,
-        members: Map<String, String>,
-        expenses: List<Expense>,
-        notificationManager: AppNotificationManager
-    ) {
-        // Convert member userIds → DocumentReference
-        val memberRefs = members.keys.map { userId ->
-            FirebaseFirestore.getInstance().collection("user").document(userId)
-        }
-
-        notificationManager.sendPaymentRemindersToFirestore(
-            groupId = groupId,
-            groupName = groupName,
-            members = memberRefs,
-            expenses = expenses
-        )
-    }
 }

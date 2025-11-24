@@ -4,20 +4,15 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android_project_onwe.model.Group
-import com.google.firebase.auth.FirebaseAuth
+import com.example.android_project_onwe.repository.GroupSettingsRepository
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class GroupSettingsViewModel : ViewModel() {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
-    private val currentUserRef: DocumentReference? =
-        auth.currentUser?.let { db.collection("user").document(it.uid) }
+    private val repo = GroupSettingsRepository()
 
     private val _group = MutableStateFlow<Group?>(null)
     val group: StateFlow<Group?> = _group
@@ -25,94 +20,48 @@ class GroupSettingsViewModel : ViewModel() {
     private val _membersData =
         MutableStateFlow<List<Triple<String, String, DocumentReference>>>(emptyList())
     val membersData: StateFlow<List<Triple<String, String, DocumentReference>>> = _membersData
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
+
     private var groupId: String? = null
 
     fun fetchGroup(groupId: String) {
         this.groupId = groupId
+        _isLoading.value = true
 
-        db.collection("group").document(groupId)
-            .addSnapshotListener { snapshot, _ ->
-                _group.value = snapshot?.toObject(Group::class.java)
-                _isLoading.value = false
-                fetchMembers()
-            }
-    }
-
-    private fun fetchMembers() {
-        val grp = _group.value ?: return
-        viewModelScope.launch {
-            val fetchedMembers = mutableListOf<Triple<String, String, DocumentReference>>()
-
-            for (memberRef in grp.members) {
-                try {
-                    val snapshot = memberRef.get().await()
-
-                    val firstName = snapshot.getString("firstName") ?: ""
-                    val lastName = snapshot.getString("lastName") ?: ""
-                    val email = snapshot.getString("email") ?: memberRef.id // fallback to UID
-
-                    if (snapshot.getString("email") == null) {
-                        Log.w("GroupSettingsVM", "Missing email for user ${memberRef.id}")
-                    }
-
-                    val displayName = if (firstName.isNotEmpty() || lastName.isNotEmpty())
-                        "$firstName $lastName".trim()
-                    else email
-
-                    fetchedMembers.add(Triple(displayName, email, memberRef))
-
-                } catch (e: Exception) {
-                    Log.e("GroupSettingsVM", "Error fetching member ${memberRef.id}", e)
-                }
-            }
-
-            _membersData.value = fetchedMembers
-        }
-    }
-
-    fun updateGroupName(newName: String) {
-        val gid = groupId ?: return
-        db.collection("group").document(gid).update("name", newName)
-    }
-
-    fun updateGroupDescription(newDesc: String) {
-        val gid = groupId ?: return
-        db.collection("group").document(gid).update("description", newDesc)
-    }
-
-    fun addMemberByEmail(email: String) {
-        val gid = groupId ?: return
         viewModelScope.launch {
             try {
-                val query = db.collection("user").whereEqualTo("email", email).get().await()
-                val userRef = query.documents.firstOrNull()?.reference
-                userRef?.let {
-                    val updatedMembers = _group.value?.members?.toMutableList() ?: mutableListOf()
-                    if (!updatedMembers.contains(it)) {
-                        updatedMembers.add(it)
-                        db.collection("group").document(gid).update("members", updatedMembers)
-                    }
-                }
+                val grp = repo.fetchGroup(groupId)
+                _group.value = grp
+                _membersData.value = grp?.let { repo.fetchMembers(it) } ?: emptyList()
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("GroupSettingsVM", "Error fetching group", e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
-    fun removeMember(memberRef: DocumentReference) {
-        val gid = groupId ?: return
-        viewModelScope.launch {
-            val updatedMembers = _group.value?.members?.toMutableList() ?: return@launch
-            updatedMembers.remove(memberRef)
-            db.collection("group").document(gid).update("members", updatedMembers)
-        }
+    fun updateGroupName(newName: String) = groupId?.let {
+        viewModelScope.launch { repo.updateGroupName(it, newName) }
     }
 
-    fun leaveGroup() {
-        currentUserRef?.let { removeMember(it) }
+    fun updateGroupDescription(newDesc: String) = groupId?.let {
+        viewModelScope.launch { repo.updateGroupDescription(it, newDesc) }
     }
 
-    fun isCurrentUser(memberRef: DocumentReference) = memberRef == currentUserRef
+    fun addMemberByEmail(email: String) = groupId?.let {
+        viewModelScope.launch { repo.addMemberByEmail(it, email) }
+    }
+
+    fun removeMember(memberRef: DocumentReference) = groupId?.let {
+        viewModelScope.launch { repo.removeMember(it, memberRef) }
+    }
+
+    fun leaveGroup() = groupId?.let {
+        viewModelScope.launch { repo.leaveGroup(it) }
+    }
+
+    fun isCurrentUser(memberRef: DocumentReference) = repo.isCurrentUser(memberRef)
 }
