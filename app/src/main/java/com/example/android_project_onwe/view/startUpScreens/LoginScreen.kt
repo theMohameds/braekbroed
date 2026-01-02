@@ -67,7 +67,12 @@ fun LoginScreen(
                     autoCorrect = false,
                     keyboardType = KeyboardType.Email
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    cursorColor = MaterialTheme.colorScheme.onBackground
+                )
             )
 
             // ----- PASSWORD FIELD -----
@@ -81,7 +86,12 @@ fun LoginScreen(
                     autoCorrect = false,
                     keyboardType = KeyboardType.Password
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    cursorColor = MaterialTheme.colorScheme.onBackground
+                )
             )
 
             // ----- LOGIN BUTTON -----

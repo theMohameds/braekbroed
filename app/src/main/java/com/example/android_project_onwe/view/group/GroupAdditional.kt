@@ -215,12 +215,12 @@ fun ChatMessageBubble(isMe: Boolean, senderName: String, text: String) {
             horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
         ) {
             Surface(
-                color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.animateContentSize()
             ) {
                 Text(text, Modifier.padding(12.dp, 8.dp),
-                    color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
                 )
             }
         }
@@ -231,19 +231,10 @@ fun ChatMessageBubble(isMe: Boolean, senderName: String, text: String) {
 @Composable
 fun ExpenseBubble(isMe: Boolean, senderName: String, text: String) {
 
-    val darkMode = isSystemInDarkTheme()
+    //val darkMode = isSystemInDarkTheme()
 
-    val bg = if (isMe) {
-        if (darkMode) Color(0xFF3C7FD5) else Color(0xFFBBDEFB)
-    } else {
-        if (darkMode) Color(0xFFE1AE4F) else Color(0xFFFFF9C4)
-    }
-
-    val content = if (isMe) {
-        if (darkMode) Color.White else Color.Black
-    } else {
-        if (darkMode) Color.Black else Color.Black
-    }
+    val bg = if (isMe) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val content = if (isMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
 
     Column(Modifier.fillMaxWidth()) {
 
@@ -251,7 +242,7 @@ fun ExpenseBubble(isMe: Boolean, senderName: String, text: String) {
             Modifier.fillMaxWidth(),
             horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
         ) {
-            Text(senderName, color = if (darkMode) Color.LightGray else Color.DarkGray)
+            Text(senderName, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Row(

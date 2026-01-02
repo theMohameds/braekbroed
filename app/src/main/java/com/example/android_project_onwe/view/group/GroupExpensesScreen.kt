@@ -75,6 +75,7 @@
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
                     navigationIcon = {
@@ -83,7 +84,9 @@
                             viewModel.resetValueGroupState()
                             onBack()
                         }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -197,8 +200,7 @@
                 onConfirm = { amount, desc ->
                     viewModel.addExpense(groupId, amount, desc)
                     showAddExpense = false
-                }
-            )
+                })
         }
 
         // Edit Expense Dialog

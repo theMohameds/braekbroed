@@ -45,6 +45,7 @@ fun CreateGroupScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -74,7 +75,12 @@ fun CreateGroupScreen(
                         label = { Text("Group Name") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSubmitting  // DISABLE when submitting
+                        enabled = !isSubmitting,  // DISABLE when submitting
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            cursorColor = MaterialTheme.colorScheme.onBackground
+                        )
                     )
 
                     OutlinedTextField(
@@ -82,7 +88,12 @@ fun CreateGroupScreen(
                         onValueChange = { groupDescription = it },
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSubmitting  // DISABLE when submitting
+                        enabled = !isSubmitting, // DISABLE when submitting
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            cursorColor = MaterialTheme.colorScheme.onBackground
+                        )
                     )
                 }
             }
@@ -106,7 +117,12 @@ fun CreateGroupScreen(
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             isError = duplicateMemberError,
-                            enabled = !isSubmitting  // DISABLE when submitting
+                            enabled = !isSubmitting,  // DISABLE when submitting
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                cursorColor = MaterialTheme.colorScheme.onBackground
+                            )
                         )
 
                         SmallFloatingActionButton(

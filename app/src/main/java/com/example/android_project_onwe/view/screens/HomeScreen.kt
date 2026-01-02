@@ -49,7 +49,8 @@ fun HomeScreen(
                     Text(
                         text = "Groups",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -76,7 +77,7 @@ fun HomeScreen(
                 placeholder = {
                     Text(
                         "Search Groups",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 leadingIcon = {
@@ -109,7 +110,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         "This user is not part of any groups yet.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -137,11 +138,7 @@ fun HomeScreen(
 @Composable
 fun GroupCard(group: Group, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val cardBackground = if (isSystemInDarkTheme()) {
-        Color(0xFF262629)
-    } else {
-        Color(0xFFF7F7F9)
-    }
+    val cardBackground = MaterialTheme.colorScheme.secondaryContainer
 
     Card(
         modifier = Modifier
@@ -182,7 +179,7 @@ fun GroupCard(group: Group, onClick: () -> Unit) {
                     text = group.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isSystemInDarkTheme()) Color.White else colors.onBackground,
+                    color = colors.surface,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -190,7 +187,7 @@ fun GroupCard(group: Group, onClick: () -> Unit) {
                 Text(
                     text = "Des: ${group.description}",
                     fontSize = 12.sp,
-                    color = if (isSystemInDarkTheme()) Color(0xFFB0B0B0) else colors.onSurfaceVariant,
+                    color = colors.onSurface,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -198,7 +195,7 @@ fun GroupCard(group: Group, onClick: () -> Unit) {
                 Text(
                     text = "Members: ${group.members.size}",
                     fontSize = 12.sp,
-                    color = if (isSystemInDarkTheme()) Color(0xFFB0B0B0) else colors.onSurfaceVariant
+                    color = colors.onSurfaceVariant
                 )
             }
         }
