@@ -92,6 +92,7 @@ fun GroupChatView(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -100,7 +101,9 @@ fun GroupChatView(
                         viewModel.resetValueGroupState()
                         onBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground
+                            )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

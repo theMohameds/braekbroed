@@ -29,10 +29,10 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(24.dp)) },
             label = { Text("Add") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.onBackground,
-                unselectedIconColor = Color.Gray,
-                selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onBackground,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedTextColor = MaterialTheme.colorScheme.onBackground,
                 indicatorColor = Color.Transparent
             )
         )
@@ -44,10 +44,10 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(24.dp)) },
             label = { Text("Home") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.onBackground,
-                unselectedIconColor = Color.Gray,
-                selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onBackground,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedTextColor = MaterialTheme.colorScheme.onBackground,
                 indicatorColor = Color.Transparent
             )
         )
@@ -59,10 +59,10 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Person, contentDescription = "Profile", modifier = Modifier.size(24.dp)) },
             label = { Text("Profile") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.onBackground,
-                unselectedIconColor = Color.Gray,
-                selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onBackground,
+                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unselectedTextColor = MaterialTheme.colorScheme.onBackground,
                 indicatorColor = Color.Transparent
             )
         )

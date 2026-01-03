@@ -65,7 +65,8 @@ fun ProfileScreen(
                     Text(
                         "Profile",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -106,9 +107,14 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = profile.firstName,
                     onValueChange = { viewModel.updateProfileField("firstName", it) },
-                    label = { Text("First Name") },
+                    label = { Text("First Name", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = firstNameError
+                    isError = firstNameError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        cursorColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
                 if (firstNameError) Text("First name cannot be empty", color = MaterialTheme.colorScheme.error)
 
@@ -118,9 +124,14 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = profile.lastName,
                     onValueChange = { viewModel.updateProfileField("lastName", it) },
-                    label = { Text("Last Name") },
+                    label = { Text("Last Name", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = lastNameError
+                    isError = lastNameError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        cursorColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
                 if (lastNameError) Text("Last name cannot be empty", color = MaterialTheme.colorScheme.error)
 
@@ -130,9 +141,14 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = profile.email,
                     onValueChange = { viewModel.updateProfileField("email", it) },
-                    label = { Text("Email") },
+                    label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        cursorColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
                 if (emailError) Text("Email cannot be empty", color = MaterialTheme.colorScheme.error)
 
@@ -142,12 +158,17 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = profile.phone,
                     onValueChange = { viewModel.updateProfileField("phone", it) },
-                    label = { Text("Phone") },
+                    label = { Text("Phone", color = MaterialTheme.colorScheme.onBackground) },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                         keyboardType = KeyboardType.Phone
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    isError = phoneError
+                    isError = phoneError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        cursorColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
                 if (phoneError) Text("Phone cannot be empty", color = MaterialTheme.colorScheme.error)
 

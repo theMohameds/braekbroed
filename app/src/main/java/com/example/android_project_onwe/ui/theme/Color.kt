@@ -1,11 +1,12 @@
 package com.example.android_project_onwe.ui.theme
 
 import androidx.compose.ui.graphics.Color
+val TeaGreen = Color(0xFFDDE5B6)
+val Vanilla = Color(0xFFF0EAD2)
+val Olive = Color(0xFFADC178)
+val Copper = Color(0xFFA98467)
+val Brown = Color(0xFF6C584C)
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val ErrorLight = Color(0xFFBA1A1A)
+val ErrorDark = Color(0xFFFFB4AB)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)

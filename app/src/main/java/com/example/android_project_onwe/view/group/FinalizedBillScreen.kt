@@ -63,15 +63,22 @@ fun FinalizedBillScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Finalized", style = MaterialTheme.typography.titleMedium)
-                        Text(groupName, style = MaterialTheme.typography.bodySmall)
+                        Text("Finalized", style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(groupName, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                )
             )
         }
     ) { padding ->
