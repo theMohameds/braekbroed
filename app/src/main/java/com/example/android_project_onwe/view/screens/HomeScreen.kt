@@ -179,7 +179,7 @@ fun GroupCard(group: Group, onClick: () -> Unit) {
                     text = group.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = colors.surface,
+                    color = colors.onSurface,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
