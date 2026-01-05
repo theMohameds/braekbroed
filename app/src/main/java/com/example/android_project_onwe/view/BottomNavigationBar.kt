@@ -18,7 +18,7 @@ fun BottomNavigationBar(
 ) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface, // slightly different from background
-        tonalElevation = 2.dp
+
     )
     {
 
@@ -33,7 +33,7 @@ fun BottomNavigationBar(
                 unselectedIconColor = Color.Gray,
                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
-                indicatorColor = Color.Transparent
+                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
         )
 
@@ -48,7 +48,7 @@ fun BottomNavigationBar(
                 unselectedIconColor = Color.Gray,
                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
-                indicatorColor = Color.Transparent
+                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
             )
         )
 
@@ -63,7 +63,7 @@ fun BottomNavigationBar(
                 unselectedIconColor = Color.Gray,
                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
                 unselectedTextColor = Color.Gray,
-                indicatorColor = Color.Transparent
+                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
         )
     }

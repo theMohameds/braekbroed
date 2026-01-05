@@ -25,8 +25,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        window.setNavigationBarContrastEnforced(false)
+
         NotificationUtils.createNotificationChannel(this)
 
+        // Look into lowering the API level so more uses can use thew app
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
                 ContextCompat.checkSelfPermission(

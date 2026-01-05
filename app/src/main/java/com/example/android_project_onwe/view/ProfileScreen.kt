@@ -3,6 +3,7 @@ package com.example.android_project_onwe.view
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,9 +54,7 @@ fun ProfileScreen(
     val canSave = hasChanges && !firstNameError && !lastNameError && !emailError && !phoneError
 
     DisposableEffect(Unit) {
-        onDispose {
-            viewModel.resetProfile()
-        }
+        onDispose { viewModel.resetProfile() }
     }
 
     Scaffold(
@@ -69,21 +68,24 @@ fun ProfileScreen(
                     )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(.1.dp)
                 )
             )
         }
-    ) { padding ->
-        Box(modifier = modifier.fillMaxSize()) {
+    ) { paddingValues ->
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues) // scaffold top/bottom insets
+                .padding(horizontal = 16.dp)
+                .statusBarsPadding(),  // optional: ensures content starts below status bar
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, // <- add this
+            contentPadding = WindowInsets.navigationBars.asPaddingValues() // dynamic bottom padding
+        ) {
 
+            item() {
                 // Profile icon
                 Box(
                     modifier = Modifier
@@ -99,9 +101,9 @@ fun ProfileScreen(
                         modifier = Modifier.size(60.dp)
                     )
                 }
+            }
 
-                Spacer(Modifier.height(20.dp))
-
+            item {
                 // First Name
                 OutlinedTextField(
                     value = profile.firstName,
@@ -110,10 +112,12 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     isError = firstNameError
                 )
-                if (firstNameError) Text("First name cannot be empty", color = MaterialTheme.colorScheme.error)
+                if (firstNameError) {
+                    Text("First name cannot be empty", color = MaterialTheme.colorScheme.error)
+                }
+            }
 
-                Spacer(Modifier.height(8.dp))
-
+            item {
                 // Last Name
                 OutlinedTextField(
                     value = profile.lastName,
@@ -122,22 +126,26 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     isError = lastNameError
                 )
-                if (lastNameError) Text("Last name cannot be empty", color = MaterialTheme.colorScheme.error)
+                if (lastNameError) {
+                    Text("Last name cannot be empty", color = MaterialTheme.colorScheme.error)
+                }
+            }
 
-                Spacer(Modifier.height(8.dp))
-
+            item {
                 // Email
                 OutlinedTextField(
                     value = profile.email,
                     onValueChange = { viewModel.updateProfileField("email", it) },
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = false,
+                    enabled = false
                 )
-                if (emailError) Text("Email cannot be empty", color = MaterialTheme.colorScheme.error)
+                if (emailError) {
+                    Text("Email cannot be empty", color = MaterialTheme.colorScheme.error)
+                }
+            }
 
-                Spacer(Modifier.height(8.dp))
-
+            item {
                 // Phone
                 OutlinedTextField(
                     value = profile.phone,
@@ -149,10 +157,12 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     isError = phoneError
                 )
-                if (phoneError) Text("Phone cannot be empty", color = MaterialTheme.colorScheme.error)
+                if (phoneError) {
+                    Text("Phone cannot be empty", color = MaterialTheme.colorScheme.error)
+                }
+            }
 
-                Spacer(Modifier.height(16.dp))
-
+            item {
                 // Notifications toggle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -165,11 +175,11 @@ fun ProfileScreen(
                         onCheckedChange = { viewModel.toggleNotifications(it) }
                     )
                 }
+            }
 
-                Spacer(Modifier.height(24.dp))
-
-                // Save button
-                if (canSave) {
+            if (canSave) {
+                item {
+                    // Save button
                     Button(
                         onClick = { viewModel.saveProfile() },
                         modifier = Modifier
@@ -186,9 +196,9 @@ fun ProfileScreen(
                         Text("Save", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
+            }
 
-                Spacer(Modifier.height(16.dp))
-
+            item {
                 // Logout button
                 Button(
                     onClick = {
@@ -206,29 +216,35 @@ fun ProfileScreen(
                 ) {
                     Text("Logout", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onError)
                 }
+            }
 
-                // Success Toast
-                if (isSaved) {
-                    Toast.makeText(context, "Profile Saved", Toast.LENGTH_LONG).show()
-                    isSaved = false
-                }
-
-                // Error message from ViewModel
-                errorMessage?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+            if (errorMessage != null) {
+                item {
+                    Text(errorMessage, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
                 }
             }
 
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+            item {
+                Spacer(modifier = Modifier.height(32.dp)) // extra space so buttons scroll above nav bar
             }
+        }
+
+        // Loading overlay
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        // Toast
+        if (isSaved) {
+            Toast.makeText(context, "Profile Saved", Toast.LENGTH_LONG).show()
+            isSaved = false
         }
     }
 }

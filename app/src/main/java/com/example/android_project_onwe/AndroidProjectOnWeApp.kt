@@ -15,7 +15,10 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
     val context = LocalContext.current
     val notificationManager = remember { AppNotificationManager(context) }
 
-
+    AppNavigation(
+        notificationManager = notificationManager
+    )
+    /*
     LaunchedEffect(isUserLoggedIn) {
         if (isUserLoggedIn) {
             notificationManager.start()
@@ -38,6 +41,8 @@ fun AndroidProjectOnWeApp(authViewModel: AuthViewModel) {
             notificationManager = notificationManager
         )
     }
+
+     */
 
 
 }
